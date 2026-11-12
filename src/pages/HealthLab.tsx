@@ -96,7 +96,7 @@ export default function HealthLab() {
   });
 
   if (!canAccessHealthLab) {
-    return <div className="p-6 text-sm text-muted-foreground">Access restricted to System Administrator, Command Tier, and Medical Officers.</div>;
+    return <div className="p-6 text-sm text-muted-foreground">Access restricted to Super Admin, Command Tier, and Medical Officers.</div>;
   }
 
   // Realtime sync across all dashboards

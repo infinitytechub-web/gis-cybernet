@@ -40,3 +40,4 @@
 - Staff Tier: save_staff_tier_definition/assign_staff_tier.
 - Custom roles: save/assign_custom_role.
 - Staff Vault: owner-only writes; reads via `staff_vault_can_view` (rank+grade, same branch) — why: no role-only access.
+- The `admin` role is the global Super Admin: `user_org_scope` returns every org unit for it, so command-scoped checks never confine it — why: Super Admin authority must not depend on a command posting.

@@ -62,7 +62,7 @@ export default function PhoneValidationRules() {
           <ShieldAlert className="h-4 w-4" />
           <AlertTitle>Restricted</AlertTitle>
           <AlertDescription>
-            Phone validation rules are visible to System Administrators, OIC and 2IC only.
+            Phone validation rules are visible to Super Admins, OIC and 2IC only.
           </AlertDescription>
         </Alert>
       </div>

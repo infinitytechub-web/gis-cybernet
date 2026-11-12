@@ -258,7 +258,7 @@ export default function CommandRoles() {
       <Alert variant="destructive" className="max-w-2xl">
         <AlertTitle>Not authorized</AlertTitle>
         <AlertDescription>
-          Command-tier management is restricted to System Administrators, the OIC and the 2IC.
+          Command-tier management is restricted to Super Admins, the OIC and the 2IC.
         </AlertDescription>
       </Alert>
     );

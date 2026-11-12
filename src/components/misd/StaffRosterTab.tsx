@@ -123,7 +123,7 @@ export function StaffRosterTab() {
     },
   });
 
-  // Restricted to: System Admin, Command OIC, Command 2IC, MISD/CYBER OIC (department supervisor)
+  // Restricted to: Super Admin, Command OIC, Command 2IC, MISD/CYBER OIC (department supervisor)
   const canManage =
     role === "admin" || role === "oic" || role === "2ic" || isMisdOic;
 

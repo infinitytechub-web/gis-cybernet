@@ -23,7 +23,7 @@ export default function Branding() {
             </span>
             <h1 className="truncate text-xl font-bold text-secondary sm:text-2xl">Branding Settings</h1>
             <Badge variant="outline" className="hidden sm:inline-flex gap-1">
-              <ShieldCheck className="h-3 w-3" /> {isAdmin ? "Administrator" : "Read-only"}
+              <ShieldCheck className="h-3 w-3" /> {isAdmin ? "Super Admin" : "Read-only"}
             </Badge>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">

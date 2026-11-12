@@ -17,7 +17,7 @@ import { resetRecaptchaConfigCache } from "@/lib/recaptcha";
 
 /** Roles that can be placed under a mandatory-MFA requirement. */
 const MFA_ROLE_CHOICES: { value: string; label: string }[] = [
-  { value: "admin", label: "System Administrator" },
+  { value: "admin", label: "Super Admin" },
   { value: "oic", label: "Officer in Charge (OIC)" },
   { value: "2ic", label: "Second in Command (2IC)" },
   { value: "staff_officer", label: "Staff Officer" },

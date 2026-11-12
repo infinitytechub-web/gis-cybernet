@@ -4,7 +4,7 @@
 import type { AppRole } from "@/lib/types";
 
 export const ROLE_LABEL: Partial<Record<AppRole, string>> = {
-  admin: "Admin",
+  admin: "Super Admin",
   oic: "OIC",
   "2ic": "2IC",
   head_of_administration: "Head of Administration",

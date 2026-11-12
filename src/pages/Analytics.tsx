@@ -34,7 +34,7 @@ const STATUS_COLORS: Record<string, string> = { open: "bg-red-100 text-red-800",
 
 // Friendly labels + display order for AppRole
 const ROLE_LABELS: Record<AppRole, string> = {
-  admin: "Admin",
+  admin: "Super Admin",
   oic: "OIC",
   "2ic": "2IC",
   head_of_administration: "Head of Administration",

@@ -53,7 +53,7 @@ import { Navigate, useSearchParams } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
 
 const roleLabels: Record<AppRole, string> = {
-  admin: "Admin",
+  admin: "Super Admin",
   oic: "Command OIC",
   "2ic": "2IC",
   head_of_administration: "Head of Administration",

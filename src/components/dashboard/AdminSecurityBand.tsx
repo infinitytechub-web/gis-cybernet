@@ -24,7 +24,7 @@ export default function AdminSecurityBand() {
     <DashboardSection
       id="administration"
       title="Administration & security"
-      description="Restricted to System Administrators, OIC and 2IC."
+      description="Restricted to Super Admins, OIC and 2IC."
       icon={ShieldCheck}
       restricted
     >

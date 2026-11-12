@@ -27,7 +27,7 @@ export function AccessDenied({ moduleKey, label }: AccessDeniedProps) {
           <p>
             You do not have the role, privileges or access level required to open{" "}
             <strong>{name ?? "this module"}</strong>. If you believe you should have access,
-            contact a System Administrator to have the permission assigned.
+            contact a Super Admin to have the permission assigned.
           </p>
           
           <div className="flex gap-2 pt-1">

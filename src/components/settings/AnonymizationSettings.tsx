@@ -30,7 +30,7 @@ import {
 
 /** Roles that can be given their own masking pattern. */
 const ROLE_CHOICES: { value: string; label: string }[] = [
-  { value: "admin", label: "System Administrator" },
+  { value: "admin", label: "Super Admin" },
   { value: "oic", label: "Officer in Charge (OIC)" },
   { value: "2ic", label: "Second in Command (2IC)" },
   { value: "head_of_administration", label: "Head of Administration" },

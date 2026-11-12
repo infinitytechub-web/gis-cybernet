@@ -36,7 +36,7 @@ export default function RestrictedOperationsBand() {
     <DashboardSection
       id="restricted-operations"
       title="Restricted operations"
-      description="Tactical maps, dispatch traffic, individual ratings and full allocations. Restricted to System Administrators, OIC and 2IC."
+      description="Tactical maps, dispatch traffic, individual ratings and full allocations. Restricted to Super Admins, OIC and 2IC."
       icon={Radar}
       restricted
     >

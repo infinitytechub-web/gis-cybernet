@@ -290,7 +290,7 @@ export function BrandingSettings() {
       {!isAdmin && (
         <Alert variant="destructive">
           <ShieldAlert className="h-4 w-4" />
-          <AlertDescription>Read-only — only System Administrators can change branding.</AlertDescription>
+          <AlertDescription>Read-only — only Super Admins can change branding.</AlertDescription>
         </Alert>
       )}
 

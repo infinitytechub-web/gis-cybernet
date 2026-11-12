@@ -42,7 +42,7 @@ export default function SecurityBiometricsAdmin() {
   if (!isAdmin) {
     return (
       <div className="p-6 text-sm text-muted-foreground">
-        Only System Administrators can open the biometric security screens.
+        Only Super Admins can open the biometric security screens.
       </div>
     );
   }

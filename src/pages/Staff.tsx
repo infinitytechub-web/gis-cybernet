@@ -1303,7 +1303,7 @@ export default function Staff() {
                     <Label htmlFor="bio-staff-id">Staff ID</Label>
                     <Input id="bio-staff-id" value={staffId} onChange={(e) => setStaffId(e.target.value)} placeholder="GIS-XXXXX" disabled={!!editing && !isAdmin} />
                     {!!editing && !isAdmin && (
-                      <p className="text-[10px] text-muted-foreground mt-1">Only a System Administrator can change this.</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">Only a Super Admin can change this.</p>
                     )}
                   </div>
                   <div>

@@ -175,7 +175,7 @@ export default function BiometricEnrollment() {
             ))}
           </Accordion>
           <p className="mt-4 text-sm text-muted-foreground">
-            Still stuck? Password sign-in always remains available. Contact a System Administrator to
+            Still stuck? Password sign-in always remains available. Contact a Super Admin to
             reset your biometric enrollment if you have lost every enrolled device.
           </p>
         </CardContent>

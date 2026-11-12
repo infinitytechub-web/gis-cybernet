@@ -7,7 +7,7 @@
  * resolve access through `canAccessModule` so they can never disagree.
  *
  * Access is decided, in order:
- *   1. System Administrator  → always allowed.
+ *   1. Super Admin  → always allowed.
  *   2. Admin-tuned overrides → `permission_matrix_overrides` (feature + role).
  *                              `none` denies, any other level allows entry.
  *   3. Static role list      → the module's `roles` array.
@@ -271,7 +271,7 @@ export function canAccessModule(key: string, input: AccessInput): boolean {
   const { role, overrides, capabilities } = input;
   if (!role) return false;
 
-  // 1. System Administrators are never locked out.
+  // 1. Super Admins are never locked out.
   if (role === "admin") return true;
 
   // 2. Admin-tuned matrix override wins over the code default.

@@ -45,7 +45,7 @@ describe("access decisions", () => {
     expect(canAccessModule("dashboard", { role: null })).toBe(false);
   });
 
-  it("always allows System Administrators", () => {
+  it("always allows Super Admins", () => {
     for (const m of MODULES) expect(canAccessModule(m.key, admin)).toBe(true);
   });
 
@@ -125,6 +125,7 @@ describe("least privilege — audit-sensitive modules", () => {
       "payments", "loans", "biometric-enrollment", "leave-calendar", "staff-portal", "command-portal", "command-dashboard",
       // Self-service only: own sign-off steps, own leave standing, own postings.
       "officer-portal",
+      "staff-vault", // own documents; reads gated server-side by staff_vault_can_view
       "regional-commands", // post-login landing; card data is caller-scoped by security-definer RPCs
     ]);
     const unexpected = MODULES.filter((m) => m.roles === "all" && !allowed.has(m.key)).map((m) => m.key);

@@ -225,7 +225,7 @@ export default function AdminConsole() {
       <Alert variant="destructive" className="max-w-2xl">
         <AlertTitle>Not authorized</AlertTitle>
         <AlertDescription>
-          The Admin Console is available to System Administrators and command-tier officers.
+          The Admin Console is available to Super Admins and command-tier officers.
         </AlertDescription>
       </Alert>
     );
