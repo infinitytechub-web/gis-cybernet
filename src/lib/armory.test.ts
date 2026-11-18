@@ -25,3 +25,13 @@ describe("automatic inspection schedule", () => {
   it("counts overdue weapons on the dashboard by date alone", () => expect(armoryCommandDashboard([w], "u", "2026-04-11").inspections.overdue).toBe(1));
   it("clamps month ends", () => expect(addMonthsIso("2026-08-31", 3)).toBe("2026-11-30"));
 });
+
+import { trainingStatusRows, commandLevel } from "./armoryAnalytics";
+describe("weapon training status", () => {
+  const s = { id: "p1", user_id: null, first_name: "A", last_name: "B", staff_id: "X", org_unit_id: "u" };
+  const cert = (details: Record<string, string>) => ({ id: "c", kind: "certification", status: "verified", profile_id: "p1", org_unit_id: "u", created_at: "2026-01-01", details } as never);
+  it("shows officers with no record", () => expect(trainingStatusRows([s], [], "u", "2026-11-18")[0].status).toBe("No training record"));
+  it("reads month, location and status", () => expect(trainingStatusRows([s], [cert({ training_month: "2026-03", location: "Accra Range", training_status: "Refresher due", expiry: "2027-01-01" })], "u", "2026-11-18")[0]).toMatchObject({ month: "2026-03", location: "Accra Range", status: "Refresher due" }));
+  it("treats a qualified record past expiry as expired", () => expect(trainingStatusRows([s], [cert({ training_status: "Qualified", expiry: "2026-11-01" })], "u", "2026-11-18")[0].status).toBe("Qualification expired"));
+  it("groups commands by level", () => expect([commandLevel("national"), commandLevel("regional"), commandLevel("sector")]).toEqual(["hq", "regional", "sector"]));
+});

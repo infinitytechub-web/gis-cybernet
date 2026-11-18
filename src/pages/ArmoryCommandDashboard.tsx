@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ArrowLeft, RefreshCw, LayoutDashboard, ClipboardCheck, Wrench, Award, Crosshair } from "lucide-react";
+import { ArmoryNav } from "@/components/armory/ArmoryNav";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -50,12 +51,10 @@ export default function ArmoryCommandDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2"><LayoutDashboard className="h-6 w-6 text-primary" aria-hidden="true" /><h1 className="text-xl font-bold sm:text-2xl">Armory Command Dashboard</h1></div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" asChild><Link to="/armory-weapons"><ArrowLeft className="mr-1 h-4 w-4" />Armory & Weapons</Link></Button>
-          <Button variant="outline" size="sm" asChild><Link to="/armory-weapons/report">Armory Report</Link></Button>
-          <Button variant="outline" size="sm" asChild><Link to="/armory-weapons/my">My Armory Portal</Link></Button>
           <Button variant="outline" size="sm" onClick={() => { void ctxQ.refetch(); void recQ.refetch(); }}><RefreshCw className="mr-1 h-4 w-4" />Refresh</Button>
         </div>
       </div>
+      <ArmoryNav />
       {ctxQ.isError || recQ.isError ? <p className="text-sm text-destructive">Armory data could not be loaded. Try Refresh.</p> : null}
       {ctxQ.isSuccess && !ctx.commands.length ? <Card><CardContent className="p-6 text-sm text-muted-foreground">You have no armory access for any command.</CardContent></Card> : <>
         <Card><CardContent className="grid gap-3 p-4 sm:grid-cols-2">

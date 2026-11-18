@@ -687,6 +687,13 @@
       "when": 1795031542632,
       "tag": "0097_armory_officer_portal",
       "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1795031796547,
+      "tag": "0098_armory_training_status_fields",
+      "breakpoints": true
     }
   ]
 }

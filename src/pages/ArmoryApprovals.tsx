@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ArrowLeft, CheckCircle2, XCircle, RefreshCw, ClipboardCheck, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { ArmoryNav } from "@/components/armory/ArmoryNav";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useStaffIdDisplay } from "@/hooks/useStaffIdDisplay";
@@ -80,10 +81,10 @@ export default function ArmoryApprovals() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2"><ClipboardCheck className="h-6 w-6 text-primary" aria-hidden="true" /><h1 className="text-xl font-bold sm:text-2xl">Armory Approvals</h1></div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" asChild><Link to="/armory-weapons"><ArrowLeft className="mr-1 h-4 w-4" />Armory & Weapons</Link></Button>
           <Button variant="outline" size="sm" onClick={() => { void ctxQ.refetch(); void recQ.refetch(); }}><RefreshCw className="mr-1 h-4 w-4" />Refresh</Button>
         </div>
       </div>
+      <ArmoryNav />
       {ctxQ.isSuccess && !ctx.commands.length ? <Card><CardContent className="p-6 text-sm text-muted-foreground">You have no armory access for any command.</CardContent></Card> : <>
       <div className="grid gap-3 sm:grid-cols-3">
         {(["custody", "transfer", "maintenance"] as const).map(k => <Card key={k}><CardContent className="p-4"><p className="text-sm text-muted-foreground">{KIND[k]} awaiting approval</p><p className="text-2xl font-bold">{recQ.isLoading ? "…" : counts[k]}</p></CardContent></Card>)}
