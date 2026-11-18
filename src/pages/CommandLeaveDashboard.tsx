@@ -65,6 +65,24 @@ export default function CommandLeaveDashboard() {
     },
   });
 
+  const today = iso(now);
+  const current = useQuery({
+    queryKey: ["command-leave-current", today],
+    refetchInterval: 60_000,
+    queryFn: async (): Promise<LeaveRow[]> => {
+      const { data, error } = await db
+        .from("leave_requests")
+        .select("id, type, status, start_date, end_date, reason_category, profiles!inner(first_name, last_name, staff_id, org_unit_id, deleted_at)")
+        .is("profiles.deleted_at", null)
+        .eq("status", "approved")
+        .lte("start_date", today).gte("end_date", today)
+        .order("end_date", { ascending: true })
+        .range(0, 4999);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const commandRows = totals.data ?? [];
   const visibleCommands = command === ALL ? commandRows : commandRows.filter((r) => (r.org_unit_id ?? "none") === command);
   const sum = visibleCommands.reduce((a, r) => ({ pending: a.pending + r.pending, approved: a.approved + r.approved, rejected: a.rejected + r.rejected, days: a.days + r.approved_days }), { pending: 0, approved: 0, rejected: 0, days: 0 });
@@ -80,6 +98,8 @@ export default function CommandLeaveDashboard() {
       return `${r.profiles?.first_name} ${r.profiles?.last_name} ${r.profiles?.staff_id} ${r.reason_category ?? ""}`.toLowerCase().includes(q);
     });
   }, [list.data, command, status, type, search, day]);
+  const onLeaveNow = (current.data ?? []).filter((r) => command === ALL || (r.profiles?.org_unit_id ?? "none") === command);
+  const nowPager = usePagedList(onLeaveNow, { resetKey: command });
   const pager = usePagedList(filtered, { resetKey: `${command}|${status}|${type}|${search}|${day}` });
 
   // Calendar: approved and pending leave per day in the visible month.
@@ -94,18 +114,18 @@ export default function CommandLeaveDashboard() {
   };
 
   const loading = totals.isLoading || list.isLoading;
-  const failed = totals.isError || list.isError;
+  const failed = totals.isError || list.isError || current.isError;
 
   return (
     <div className="space-y-4 p-1">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Command Leave Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Pending, approved and rejected leave for the commands you are authorised to see.</p>
+          <h1 className="text-2xl font-semibold">Command Staff On Leave</h1>
+          <p className="text-sm text-muted-foreground">Officers on leave today, plus pending and approved leave, for the commands you are authorised to see.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" asChild><Link to="/leave/approvals">Review requests</Link></Button>
-          <Button variant="outline" size="sm" onClick={() => { void totals.refetch(); void list.refetch(); }}><RefreshCw className="mr-1 h-4 w-4" />Refresh</Button>
+          <Button variant="outline" size="sm" onClick={() => { void totals.refetch(); void list.refetch(); void current.refetch(); }}><RefreshCw className="mr-1 h-4 w-4" />Refresh</Button>
         </div>
       </div>
 
@@ -130,14 +150,38 @@ export default function CommandLeaveDashboard() {
 
       {failed && <div role="alert" className="text-destructive">Leave figures could not be loaded. <Button size="sm" variant="outline" onClick={() => { void totals.refetch(); void list.refetch(); }}>Retry</Button></div>}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {[["Pending", sum.pending], ["Approved", sum.approved], ["Rejected", sum.rejected], ["Approved days", sum.days]].map(([label, value]) => (
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {[["On leave today", current.isLoading ? "…" : onLeaveNow.length], ["Pending", sum.pending], ["Approved", sum.approved], ["Rejected", sum.rejected], ["Approved days", sum.days]].map(([label, value]) => (
           <Card key={label as string}><CardContent className="pt-4">
             <p className="text-sm text-muted-foreground">{label}</p>
             <p className="text-3xl font-semibold text-primary">{loading ? "…" : value}</p>
           </CardContent></Card>
         ))}
       </div>
+
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Officers on leave today ({formatDate(today)})</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="overflow-x-auto">
+            <Table className="min-w-[700px]"><TableHeader><TableRow><TableHead>Officer</TableHead><TableHead>Type</TableHead><TableHead>Dates</TableHead><TableHead>Returns</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {nowPager.pageItems.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">{current.isLoading ? "Loading…" : "No officers are on approved leave today"}</TableCell></TableRow>}
+                {nowPager.pageItems.map((r) => {
+                  const back = new Date(r.end_date + "T00:00:00"); back.setDate(back.getDate() + 1);
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell>{r.profiles?.first_name} {r.profiles?.last_name}<div className="text-xs text-muted-foreground">{r.profiles?.staff_id}</div></TableCell>
+                      <TableCell>{LEAVE_TYPE_LABELS[r.type] ?? r.type}</TableCell>
+                      <TableCell>{formatDate(r.start_date)} – {formatDate(r.end_date)}</TableCell>
+                      <TableCell>{formatDate(iso(back))}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody></Table>
+          </div>
+          <ListPagination {...nowPager} label="officers on leave" />
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
