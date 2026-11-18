@@ -148,3 +148,31 @@ export function armoryStatusLabel(r: Pick<ArmoryRecord, "kind" | "status">) {
   const map: Record<string, string> = { approved: "Approved", rejected: "Rejected", draft: "Draft", cancelled: "Cancelled", acknowledged: "Acknowledged", returned: "Returned", discrepancy: "Discrepancy", handed_over: "Handed over", received: "Received", archived: "Archived" };
   return map[r.status] ?? r.status.replace(/_/g, " ");
 }
+
+export type WeaponLifecycleEntry = { record: ArmoryRecord; kind: "custody" | "transfer" | "maintenance"; date: string };
+export type WeaponServiceSummary = {
+  custodyIssues: number; custodyOpen: number; transfers: number; transfersCompleted: number;
+  inspections: number; inspectionsApproved: number; lastInspection: string | null; nextReview: string | null; reviewOverdue: boolean;
+};
+const CLOSED_CUSTODY = ["returned", "rejected", "cancelled", "archived"];
+/** Every custody, transfer and inspection record that references this weapon, oldest first. */
+export function weaponLifecycle(records: ArmoryRecord[], weaponId: string): WeaponLifecycleEntry[] {
+  return records
+    .filter(r => r.asset_id === weaponId && (r.kind === "custody" || r.kind === "transfer" || r.kind === "maintenance"))
+    .map(r => ({ record: r, kind: r.kind as WeaponLifecycleEntry["kind"], date: r.kind === "maintenance" && r.details.date ? r.details.date : r.created_at.slice(0, 10) }))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.record.created_at.localeCompare(b.record.created_at));
+}
+export function weaponServiceSummary(entries: WeaponLifecycleEntry[], today: string): WeaponServiceSummary {
+  const custody = entries.filter(e => e.kind === "custody");
+  const transfers = entries.filter(e => e.kind === "transfer" && e.record.status !== "archived");
+  const insp = entries.filter(e => e.kind === "maintenance" && !["rejected", "archived"].includes(e.record.status));
+  const last = insp.map(e => e.record.details.date).filter(Boolean).sort().pop() ?? null;
+  const next = insp.filter(e => e.record.details.date === last).map(e => e.record.details.next_review).filter(Boolean).sort().pop() ?? null;
+  return {
+    custodyIssues: custody.filter(e => !["draft", "rejected", "cancelled"].includes(e.record.status)).length,
+    custodyOpen: custody.filter(e => !CLOSED_CUSTODY.includes(e.record.status) && e.record.status !== "draft").length,
+    transfers: transfers.length, transfersCompleted: transfers.filter(e => e.record.status === "received").length,
+    inspections: insp.length, inspectionsApproved: insp.filter(e => e.record.status === "approved").length,
+    lastInspection: last, nextReview: next, reviewOverdue: !!next && next < today,
+  };
+}
