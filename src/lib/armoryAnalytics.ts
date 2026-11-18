@@ -8,7 +8,7 @@ export type TrainingRow = { staff: ArmoryStaff; record: ArmoryRecord | null; mon
 
 /** Latest training record per officer; a recorded Qualified status past its expiry reads as Qualification expired. */
 export function trainingStatusRows(staff: ArmoryStaff[], records: ArmoryRecord[], unitId: string, today: string): TrainingRow[] {
-  const certs = records.filter(r => r.kind === "certification" && !["archived", "rejected"].includes(r.status));
+  const certs = records.filter(r => r.kind === "certification" && r.status === "verified");
   return staff.filter(s => s.org_unit_id === unitId).map(s => {
     const mine = certs.filter(r => r.profile_id === s.id).sort((a, b) => (b.details.training_month || b.details.issued || b.created_at).localeCompare(a.details.training_month || a.details.issued || a.created_at));
     const r = mine[0] ?? null;

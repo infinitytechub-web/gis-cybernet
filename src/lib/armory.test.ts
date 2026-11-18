@@ -33,5 +33,6 @@ describe("weapon training status", () => {
   it("shows officers with no record", () => expect(trainingStatusRows([s], [], "u", "2026-11-18")[0].status).toBe("No training record"));
   it("reads month, location and status", () => expect(trainingStatusRows([s], [cert({ training_month: "2026-03", location: "Accra Range", training_status: "Refresher due", expiry: "2027-01-01" })], "u", "2026-11-18")[0]).toMatchObject({ month: "2026-03", location: "Accra Range", status: "Refresher due" }));
   it("treats a qualified record past expiry as expired", () => expect(trainingStatusRows([s], [cert({ training_status: "Qualified", expiry: "2026-11-01" })], "u", "2026-11-18")[0].status).toBe("Qualification expired"));
+  it("ignores training not yet verified by a command head", () => expect(trainingStatusRows([s], [{ ...(cert({ training_status: "Qualified", expiry: "2027-01-01" }) as object), status: "pending" } as never], "u", "2026-11-18")[0].status).toBe("No training record"));
   it("groups commands by level", () => expect([commandLevel("national"), commandLevel("regional"), commandLevel("sector")]).toEqual(["hq", "regional", "sector"]));
 });

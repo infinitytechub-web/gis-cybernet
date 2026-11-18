@@ -61,3 +61,7 @@
 
 - [x] Custody chain: HAWAWU acknowledges TEST-0001, return, confirm report
 - [x] Command head (OIC/2IC) sign-in for Amasaman to approve armory requests without Super Admin
+
+## Armory follow-ups
+- [x] TEST weapon registers for Legon and National Headquarters, verified on Analytics
+- [x] Officer training shows on Training Status (verified records only)
