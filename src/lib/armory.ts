@@ -76,3 +76,59 @@ export function armoryTotals(records: ArmoryRecord[]) {
 export function armoryAlerts(records: ArmoryRecord[], today: string) {
   return records.filter(r=>r.status!=="archived" && (r.status==="pending" || r.status==="discrepancy" || (r.kind==="finding" && r.status==="open") || (!!r.details.expiry && r.details.expiry<today) || (r.kind==="maintenance" && !!r.details.next_review && r.details.next_review<today) || (r.kind==="corrective" && r.status!=="completed" && !!r.details.due_date && r.details.due_date<today)));
 }
+export const ARMORY_REPORT_KINDS = ["custody", "transfer", "maintenance", "certification"] as const;
+export type ArmoryReportKind = typeof ARMORY_REPORT_KINDS[number];
+export type ArmoryReportEntry = { record: ArmoryRecord; unitId: string; month: string; date: string; side?: "sent" | "received" };
+export type ArmoryMonthRow = { unitId: string; month: string; custody: number; transfer: number; maintenance: number; certification: number; total: number };
+const CUSTODY_ISSUED = ["approved", "acknowledged", "discrepancy", "returned", "closed"];
+const CUSTODY_RETURNED = ["returned", "closed"];
+const INSPECTION_PENDING = ["draft", "pending", "scheduled"];
+
+/** Date a record belongs to for monthly reporting (ISO yyyy-MM-dd). */
+export function armoryReportDate(r: ArmoryRecord) {
+  const d = r.kind === "maintenance" ? r.details.date : r.kind === "certification" ? r.details.issued : "";
+  return (d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : r.created_at.slice(0, 10));
+}
+
+/** One entry per command a record counts under; transfers count for origin (sent) and destination (received). */
+export function armoryReportEntries(records: ArmoryRecord[]): ArmoryReportEntry[] {
+  const out: ArmoryReportEntry[] = [];
+  for (const r of records) {
+    if (!(ARMORY_REPORT_KINDS as readonly string[]).includes(r.kind) || r.status === "archived") continue;
+    const date = armoryReportDate(r); const month = date.slice(0, 7);
+    if (r.kind === "transfer") {
+      out.push({ record: r, unitId: r.org_unit_id, month, date, side: "sent" });
+      if (r.destination_unit_id && r.destination_unit_id !== r.org_unit_id) out.push({ record: r, unitId: r.destination_unit_id, month, date, side: "received" });
+    } else out.push({ record: r, unitId: r.org_unit_id, month, date });
+  }
+  return out;
+}
+
+export function armoryMonthlyReport(entries: ArmoryReportEntry[]): ArmoryMonthRow[] {
+  const map = new Map<string, ArmoryMonthRow>();
+  for (const e of entries) {
+    const key = `${e.unitId}|${e.month}`;
+    const row = map.get(key) ?? { unitId: e.unitId, month: e.month, custody: 0, transfer: 0, maintenance: 0, certification: 0, total: 0 };
+    row[e.record.kind as ArmoryReportKind] += 1; row.total += 1; map.set(key, row);
+  }
+  return [...map.values()].sort((a, b) => b.month.localeCompare(a.month) || a.unitId.localeCompare(b.unitId));
+}
+
+export function armoryReportTotals(entries: ArmoryReportEntry[], today: string) {
+  const soon = new Date(`${today}T00:00:00Z`); soon.setUTCDate(soon.getUTCDate() + 30); const soonIso = soon.toISOString().slice(0, 10);
+  const of = (k: ArmoryReportKind) => entries.filter(e => e.record.kind === k);
+  const custody = of("custody"), transfer = of("transfer"), insp = of("maintenance"), cert = of("certification");
+  return {
+    custodyIssued: custody.filter(e => CUSTODY_ISSUED.includes(e.record.status)).length,
+    custodyReturned: custody.filter(e => CUSTODY_RETURNED.includes(e.record.status)).length,
+    custodyOut: custody.filter(e => CUSTODY_ISSUED.includes(e.record.status) && !CUSTODY_RETURNED.includes(e.record.status)).length,
+    transfersSent: transfer.filter(e => e.side === "sent").length,
+    transfersReceived: transfer.filter(e => e.side === "received").length,
+    inspectionsDone: insp.filter(e => !INSPECTION_PENDING.includes(e.record.status)).length,
+    inspectionsPending: insp.filter(e => INSPECTION_PENDING.includes(e.record.status)).length,
+    certValid: cert.filter(e => (e.record.details.expiry ?? "") > soonIso).length,
+    certExpiring: cert.filter(e => { const x = e.record.details.expiry ?? ""; return x >= today && x <= soonIso; }).length,
+    certExpired: cert.filter(e => { const x = e.record.details.expiry ?? ""; return !!x && x < today; }).length,
+    total: entries.length,
+  };
+}
