@@ -124,7 +124,7 @@ export default function Login() {
       // function (rate-limited, audited, captcha-gated, no direct anon DB access).
       const { data: lookupData, error: lookupErr } = await supabase.functions.invoke(
         "resolve-staff-email",
-        { body: { staff_id: trimmedId, recaptcha_token: captchaToken } },
+        { body: { staff_id: trimmedId, password, recaptcha_token: captchaToken } },
       );
       const lookup = (lookupData ?? null) as
         | {

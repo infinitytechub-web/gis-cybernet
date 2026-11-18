@@ -40,3 +40,5 @@
 - Staff Tier/custom roles: save_staff_tier_definition, assign_staff_tier, save/assign_custom_role.
 - Staff Vault: owner writes; reads via `staff_vault_can_view` — why: no role-only access.
 - `admin` = global Super Admin: `user_org_scope` returns all units for it — why: authority must not depend on posting.
+
+- Function security: `supabase/functions/AGENTS.md`.

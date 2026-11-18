@@ -56,6 +56,8 @@ Deno.serve(async (req) => {
   const auth = req.headers.get('Authorization') ?? ''
   const bearer = auth.startsWith('Bearer ') ? auth.slice(7) : ''
   const isServiceRole = !!supabaseServiceKey && bearer === supabaseServiceKey
+  let callerId: string | null = null
+  let callerIsAdmin = false
   if (!isServiceRole) {
     if (!bearer || !supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -71,11 +73,13 @@ Deno.serve(async (req) => {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
+    callerId = claims.claims.sub
     const adminClient = createClient(supabaseUrl, supabaseServiceKey)
     const { data: roles } = await adminClient
       .from('user_roles')
       .select('role')
       .eq('user_id', claims.claims.sub)
+    callerIsAdmin = (roles ?? []).some((r: { role: string }) => r.role === 'admin')
     const allowed = (roles ?? []).some((r: { role: string }) => ALLOWED_ROLES.includes(r.role))
     if (!allowed) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
@@ -100,9 +104,11 @@ Deno.serve(async (req) => {
   let recipientEmail: string
   let idempotencyKey: string
   let messageId: string
+  let requestId: unknown
   let templateData: Record<string, any> = {}
   try {
     const body = await req.json()
+    requestId = body.requestId
     templateName = body.templateName || body.template_name
     recipientEmail = body.recipientEmail || body.recipient_email
     messageId = crypto.randomUUID()
@@ -142,6 +148,32 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
+  }
+
+  if (!isServiceRole) {
+    const deny = () => new Response(JSON.stringify({ error: 'Verified notification unavailable' }), {
+      status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+    const scoped = createClient(supabaseUrl, supabaseAnonKey!, { global: { headers: { Authorization: auth } } })
+    if (templateName === 'profile-change-status') {
+      if (typeof requestId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId)) return deny()
+      const { data: event, error } = await scoped.from('profile_change_requests').select('*').eq('id', requestId).maybeSingle()
+      if (error || !event || !['approved', 'rejected', 'supervisor_approved', 'pending'].includes(event.status)) return deny()
+      const actorId = event.reviewer_id
+      if (!actorId || actorId !== callerId) return deny()
+      const { data: target, error: targetError } = await scoped.from('profiles').select('email, first_name, last_name').eq('id', event.profile_id).is('deleted_at', null).maybeSingle()
+      if (targetError || !target?.email) return deny()
+      recipientEmail = target.email
+      idempotencyKey = `pcr-${event.id}-${event.status}-${event.updated_at}`
+      templateData = {
+        recipientName: `${target.first_name ?? ''} ${target.last_name ?? ''}`.trim(),
+        status: event.status === 'supervisor_approved' ? 'pending' : event.status,
+        reviewedAt: event.admin_reviewed_at || event.reviewed_at || event.supervisor_reviewed_at,
+        requestUrl: `https://admin.infinitytechub.com/my-profile?request=${event.id}`,
+      }
+    } else if (templateName === 'test-email' && callerIsAdmin) {
+      templateData = { sentBy: 'System Administrator', sentAt: new Date().toISOString() }
+    } else return deny()
   }
 
   // Resolve effective recipient: template-level `to` takes precedence over

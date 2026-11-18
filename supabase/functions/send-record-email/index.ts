@@ -3,6 +3,7 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
+import { buildVerifiedRecordEmail, RECORD_TABLES } from "../_shared/verified-record-email.ts";
 import { partitionRecipients } from "../_shared/recipient-policy.ts";
 
 const corsHeaders = {
@@ -40,32 +41,6 @@ interface SendBody {
 
   // Server-side dry run: validate + dedup + write audit log, but skip delivery.
   dry_run?: boolean;
-}
-
-const MAX_EXTRA_FILE_BYTES = 5 * 1024 * 1024;
-const MAX_EXTRA_TOTAL_BYTES = 15 * 1024 * 1024;
-const MAX_EXTRA_COUNT = 5;
-
-function sanitizeExtraAttachments(
-  v: unknown,
-): Array<{ filename: string; content_base64: string; size: number }> {
-  if (!Array.isArray(v)) return [];
-  const out: Array<{ filename: string; content_base64: string; size: number }> = [];
-  let total = 0;
-  for (const item of v) {
-    if (!item || typeof item !== "object") continue;
-    const filename = String((item as any).filename ?? "").trim().slice(0, 200);
-    const content_base64 = String((item as any).content_base64 ?? "");
-    if (!filename || content_base64.length < 4) continue;
-    // approx decoded byte size from base64 length
-    const approxSize = Math.floor((content_base64.length * 3) / 4);
-    if (approxSize > MAX_EXTRA_FILE_BYTES) continue;
-    if (total + approxSize > MAX_EXTRA_TOTAL_BYTES) break;
-    total += approxSize;
-    out.push({ filename, content_base64, size: approxSize });
-    if (out.length >= MAX_EXTRA_COUNT) break;
-  }
-  return out;
 }
 
 interface RecipientResult {
@@ -159,17 +134,29 @@ Deno.serve(async (req) => {
       errors.push("recipients");
     }
 
-    if (!body.subject || body.subject.length > 255) errors.push("subject");
-    if (!body.message || body.message.length > 10_000) errors.push("message");
-    if (!body.attachment_base64 || body.attachment_base64.length < 50) errors.push("attachment_base64");
-    if (!body.attachment_filename) errors.push("attachment_filename");
-    if (!body.record_kind) errors.push("record_kind");
+    const table = Object.hasOwn(RECORD_TABLES, body.record_kind) ? RECORD_TABLES[body.record_kind] : null;
+    if (!table || typeof body.record_id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.record_id)) errors.push("record");
+    if (Array.isArray(body.extra_attachments) && body.extra_attachments.length) errors.push("extra_attachments");
     if (errors.length) {
-      return new Response(
-        JSON.stringify({ error: "Invalid input", fields: errors }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Only verified record emails are supported", fields: errors }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+    // Caller-scoped RLS must authorize the exact record before any content is generated.
+    const { data: record, error: recordError } = await supabase.from(table).select("*").eq("id", body.record_id).maybeSingle();
+    if (recordError || !record) return new Response(JSON.stringify({ error: "Record unavailable" }), {
+      status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+    const verified = buildVerifiedRecordEmail(body.record_kind, record);
+    body.subject = verified.subject;
+    body.message = verified.message;
+    body.attachment_base64 = verified.content;
+    body.attachment_filename = verified.filename;
+    body.applicant_id = record.id;
+    body.applicant_name = record.applicant_name ?? null;
+    body.attachment_generated_at = new Date().toISOString();
+    body.attachment_sha256 = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", verified.bytes)))
+      .map((b) => b.toString(16).padStart(2, "0")).join("");
 
     const isDryRun = body.dry_run === true;
 
@@ -217,7 +204,7 @@ Deno.serve(async (req) => {
         </p>
       </div>`;
 
-    const extraAttachments = sanitizeExtraAttachments(body.extra_attachments);
+    const extraAttachments: Array<{ filename: string; content_base64: string; size: number }> = [];
 
     async function sendOne(recipient: string): Promise<RecipientResult> {
       const payload: Record<string, unknown> = {

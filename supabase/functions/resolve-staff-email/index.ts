@@ -145,6 +145,13 @@ Deno.serve(async (req) => {
     });
   }
 
+  const password = (body as { password?: unknown }).password;
+  if (action !== "resolve" || typeof password !== "string" || !password || password.length > 256) {
+    return new Response(JSON.stringify({ error: "Invalid ID or password" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const { data: email, error } = await supabase.rpc("get_email_by_staff_id", {
     _staff_id: raw,
   });
@@ -168,10 +175,22 @@ Deno.serve(async (req) => {
     } catch { /* best effort */ }
     // Generic response — never leak whether the ID exists.
     return new Response(JSON.stringify({ error: "Invalid ID or password" }), {
-      status: 404,
+      status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
+  const probe = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: proof, error: proofError } = await probe.auth.signInWithPassword({ email, password });
+  if (proofError || !proof?.session) {
+    await supabase.rpc("record_failed_login", { _staff_id: raw, _ip_address: ip });
+    return new Response(JSON.stringify({ error: "Invalid ID or password" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  await probe.auth.signOut({ scope: "local" }).catch(() => {});
 
   // Report the current lockout state and the configured threshold so the
   // login screen can show accurate, policy-driven messages.

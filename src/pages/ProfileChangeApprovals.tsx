@@ -110,33 +110,12 @@ export default function ProfileChangeApprovals() {
     req: any,
     reviewedAt: string
   ) => {
-    const recipientEmail: string | null = req?.profiles?.email ?? null;
-    if (!recipientEmail || !user) return;
+    if (!user) return;
     try {
-      const { data: me } = await supabase
-        .from("profiles")
-        .select("first_name, last_name")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      const reviewerName = me ? `${me.first_name ?? ""} ${me.last_name ?? ""}`.trim() : undefined;
-      await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "profile-change-status",
-          recipientEmail,
-          idempotencyKey: `pcr-${id}-${status}`,
-          templateData: {
-            recipientName: req?.profiles
-              ? `${req.profiles.first_name ?? ""} ${req.profiles.last_name ?? ""}`.trim()
-              : undefined,
-            status,
-            fields: Object.keys(req?.requested_changes ?? {}),
-            reviewerName,
-            reviewerNotes: notes[id] ?? null,
-            reviewedAt: formatDateTime(reviewedAt),
-            requestUrl: `${window.location.origin}/my-profile?request=${id}`,
-          },
-        },
+      const { error } = await supabase.functions.invoke("send-transactional-email", {
+        body: { templateName: "profile-change-status", requestId: id },
       });
+      if (error) throw error;
     } catch (err) {
       console.warn("Email alert failed:", err);
     }

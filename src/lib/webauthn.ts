@@ -154,11 +154,11 @@ export async function biometricLogin(
   staffId: string,
   deviceFingerprint?: string | null,
 ): Promise<BiometricLoginResult> {
-  const optionsResult = await invoke<{ enrolled: boolean; options?: Record<string, unknown> }>(
+  const optionsResult = await invoke<{ options: Record<string, unknown> }>(
     "webauthn-login-options",
     { staff_id: staffId },
   );
-  if (!optionsResult.enrolled || !optionsResult.options) return { status: "not_enrolled" };
+  if (!optionsResult.options) throw new Error("Biometric sign-in unavailable. Use your password instead.");
 
   let assertion;
   try {

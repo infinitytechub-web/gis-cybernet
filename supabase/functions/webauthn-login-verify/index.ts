@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
     .eq("approval_status", "approved")
     .maybeSingle();
 
-  if (!cred || cred.user_id !== stored.user_id) {
+  if (!cred) {
     return await failGeneric("Unknown or revoked credential");
   }
 
@@ -102,6 +102,18 @@ Deno.serve(async (req) => {
   }
 
   if (!verification.verified) return await failGeneric("Assertion rejected");
+
+  // Resolve the requested account only after proving possession of its passkey.
+  const { data: profile, error: profileError } = await db.from("profiles").select("user_id")
+    .ilike("staff_id", staffId).is("deleted_at", null).maybeSingle();
+  const { data: enabled, error: settingsError } = await db.from("webauthn_user_settings")
+    .select("biometric_login_enabled").eq("user_id", cred.user_id).maybeSingle();
+  const { data: locked, error: lockError } = await db.rpc("is_staff_locked", { _staff_id: staffId });
+  const { data: app, error: appError } = await db.from("app_settings").select("biometric_login_enabled").limit(1).maybeSingle();
+  if (profileError || profile?.user_id !== cred.user_id || settingsError || enabled?.biometric_login_enabled === false ||
+      lockError || locked === true || appError || app?.biometric_login_enabled === false) {
+    return await failGeneric("Account unavailable for biometric sign-in");
+  }
 
   await db
     .from("webauthn_credentials")

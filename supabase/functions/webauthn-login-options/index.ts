@@ -31,7 +31,6 @@ Deno.serve(async (req) => {
   }
 
   const db = adminClient();
-  const ip = clientIp(req);
 
   const { data: appSettings } = await db
     .from("app_settings")
@@ -42,72 +41,22 @@ Deno.serve(async (req) => {
     return json({ error: "Biometric sign-in is disabled for this organisation" }, 403);
   }
 
-  // Existing lockout / IP-block policy applies before any credential lookup.
-  try {
-    const { data: locked } = await db.rpc("is_staff_locked", { _staff_id: staffId });
-    if (locked === true) {
-      return json({ error: "Account temporarily locked. Contact an administrator." }, 423);
-    }
-  } catch (_e) { /* fail open to the generic path below */ }
-
-  try {
-    const { data: blocked } = await db.rpc("is_ip_blocked", { _ip: ip });
-    if (blocked === true) {
-      return json({ error: "Access from this network is blocked." }, 403);
-    }
-  } catch (_e) { /* the RPC may not accept this shape; ignore */ }
-
-  const { data: email } = await db.rpc("get_email_by_staff_id", { _staff_id: staffId });
-
-  let userId: string | null = null;
-  if (email) {
-    const { data: profile } = await db
-      .from("profiles")
-      .select("user_id")
-      .eq("staff_id", staffId)
-      .maybeSingle();
-    userId = profile?.user_id ?? null;
-  }
-
-  let credentials: { credential_id: string; transports: string[] }[] = [];
-  if (userId) {
-    const { data: enabled } = await db
-      .from("webauthn_user_settings")
-      .select("biometric_login_enabled")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (!enabled || enabled.biometric_login_enabled !== false) {
-      const { data: creds } = await db
-        .from("webauthn_credentials")
-        .select("credential_id, transports")
-        .eq("user_id", userId)
-        .is("revoked_at", null)
-        .eq("approval_status", "approved");
-      credentials = creds ?? [];
-    }
-  }
-
-  // Uniform "not enrolled" answer for unknown IDs and known-but-unenrolled IDs.
-  if (credentials.length === 0) {
-    return json({ enrolled: false });
-  }
+  // Network policy is account-independent and does not disclose enrollment.
+  const { data: blocked } = await db.rpc("is_ip_blocked", { _ip: clientIp(req) });
+  if (blocked === true) return json({ error: "Access from this network is blocked." }, 403);
 
   const options = await generateAuthenticationOptions({
     rpID: rp.rpID,
     userVerification: "required",
-    allowCredentials: credentials.map((c) => ({
-      id: c.credential_id,
-      transports: (c.transports ?? []) as unknown as undefined,
-    })),
+    allowCredentials: [],
     timeout: 120000,
   });
 
   await storeChallenge(db, {
     challenge: options.challenge,
     purpose: "login",
-    userId,
     staffId,
   });
 
-  return json({ enrolled: true, options });
+  return json({ options });
 });
