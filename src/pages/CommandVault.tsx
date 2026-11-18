@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import { VaultStaffOnLeave } from "@/components/command/VaultStaffOnLeave";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -42,6 +43,7 @@ import {
 } from "recharts";
 
 const CATEGORIES = [
+  { value: "armory", label: "Armory & Weapons" },
   { value: "general", label: "General" },
   { value: "staff_list", label: "Staff List" },
   { value: "personnel_file", label: "Personnel File" },
@@ -53,6 +55,7 @@ const CATEGORIES = [
 ];
 
 const CATEGORY_BADGE: Record<string, string> = {
+  armory: "bg-secondary text-secondary-foreground",
   general: "bg-slate-100 text-slate-800 dark:bg-slate-900/40 dark:text-slate-300",
   staff_list: "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300",
   personnel_file: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
@@ -71,8 +74,9 @@ export default function CommandVault() {
   const qc = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [params] = useSearchParams();
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState(params.get("category") === "armory" ? "armory" : "all");
   const [archiveFilter, setArchiveFilter] = useState("active");
   const [selectedCommand, setSelectedCommand] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -81,7 +85,7 @@ export default function CommandVault() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [meta, setMeta] = useState({
     title: "",
-    category: "staff_list",
+    category: params.get("category") === "armory" ? "armory" : "staff_list",
     description: "",
     related_profile_id: "",
   });
@@ -120,12 +124,14 @@ export default function CommandVault() {
   });
 
   useEffect(() => {
-    if (!selectedCommand && viewerProfile?.org_unit_id) setSelectedCommand(viewerProfile.org_unit_id);
-  }, [selectedCommand, viewerProfile?.org_unit_id]);
+    const requested = params.get("command");
+    if (!selectedCommand && requested && commands.some(c => c.id === requested)) setSelectedCommand(requested);
+    else if (!selectedCommand && commandsFetched && viewerProfile?.org_unit_id && commands.some(c => c.id === viewerProfile.org_unit_id)) setSelectedCommand(viewerProfile.org_unit_id);
+  }, [commands, commandsFetched, params, selectedCommand, viewerProfile?.org_unit_id]);
 
   useEffect(() => {
-    if (!selectedCommand && isAdmin && commands[0]?.id) setSelectedCommand(commands[0].id);
-  }, [commands, isAdmin, selectedCommand]);
+    if (!selectedCommand && isAdmin && !params.get("command") && commands[0]?.id) setSelectedCommand(commands[0].id);
+  }, [commands, isAdmin, params, selectedCommand]);
 
   // Fetch staff for the optional "related officer" combobox
   const { data: staff = [] } = useQuery({

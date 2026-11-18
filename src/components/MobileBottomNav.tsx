@@ -57,6 +57,7 @@ const moreItems = [
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck, iconColor: "text-sky-600 dark:text-sky-400", group: "Security" },
   { title: "MISD / CYBER", url: "/misd", icon: Shield, iconColor: "text-purple-700 dark:text-purple-300", group: "Security" },
   { title: "IPSE", url: "/ipse", icon: Shield, iconColor: "text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]", group: "Security" },
+  { title: "Armory & Weapons", url: "/armory-weapons", icon: Crosshair, iconColor: "text-primary", group: "Security" },
   // Logistics
   { title: "Stores & Inventory", url: "/stores", icon: Package, iconColor: "text-amber-700 dark:text-amber-500", group: "Logistics" },
   { title: "Health Lab+", url: "/health-lab", icon: FileHeart, iconColor: "text-emerald-700 dark:text-emerald-300", group: "Health" },

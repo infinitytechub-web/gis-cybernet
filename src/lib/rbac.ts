@@ -153,6 +153,7 @@ export const MODULES: ModuleDef[] = [
   { key: "shift-rotation-approvals", label: "Shift Rotation Approvals", tier: "command", roles: COMMAND, paths: ["/shift-rotation-approvals"] },
   { key: "shift-connections", label: "Shift Connections", tier: "command", roles: COMMAND, paths: ["/attendance/connections"] },
   { key: "command-vault", label: "Command Vault", tier: "command", roles: COMMAND, paths: ["/command-vault", "/command-vault/gps"] },
+  { key: "armory-weapons", label: "Armory & Weapons", tier: "command", roles: ["admin", "oic", "2ic", "chief_staff_officer"], paths: ["/armory-weapons"] },
   { key: "interlink", label: "Interlink", tier: "command", roles: COMMAND, paths: ["/interlink"] },
   { key: "commands", label: "Commands Administration", tier: "command", roles: COMMAND, paths: ["/commands", "/command/:slug"] },
   { key: "command-console", label: "Command Console", tier: "command", roles: COMMAND, paths: ["/command-console"] },

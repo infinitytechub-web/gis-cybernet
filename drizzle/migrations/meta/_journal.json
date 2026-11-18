@@ -617,6 +617,27 @@
       "when": 1795027654466,
       "tag": "0087_attendance_report_rows",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1795028821710,
+      "tag": "0088_armory_weapons_management",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1795029046732,
+      "tag": "0089_armory_validation_and_adjustments",
+      "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1795029137854,
+      "tag": "0090_armory_scoped_management_and_live_updates",
+      "breakpoints": true
     }
   ]
 }

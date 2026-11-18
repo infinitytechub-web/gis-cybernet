@@ -33,6 +33,8 @@ export const COMMAND_CAPABILITIES: { value: string; label: string; hint: string 
   { value: "roster", label: "Duty roster & rotations", hint: "Build, publish and deploy rosters" },
   { value: "staff_admin", label: "Staff administration", hint: "Staff records and approvals" },
   { value: "inventory", label: "Stores & inventory", hint: "Inventory and issuance oversight" },
+  { value: "armory-weapons", label: "Armory & Weapons — view", hint: "Command-scoped registers and activity" },
+  { value: "armory-manage", label: "Armory & Weapons — manage", hint: "Requires armory view grant; approvals remain with Command Heads" },
   { value: "gps", label: "GPS & mapping", hint: "Live tracking and route history" },
 ];
 

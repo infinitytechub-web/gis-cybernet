@@ -133,6 +133,7 @@ const immigrationItems = [
 ];
 
 const securityItems = [
+  { title: "Armory & Weapons", url: "/armory-weapons", icon: Crosshair, iconColor: "text-primary" },
   { title: "Regional Commands", url: "/regional-commands", icon: MapPinned, iconColor: "text-primary" },
   { title: "Command Operations", url: "/command-operations?tab=dashboard", icon: ShieldAlert, iconColor: "text-primary" },
   { title: "IPSE", url: "/ipse", icon: Shield, iconColor: "text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]" },

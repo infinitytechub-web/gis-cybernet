@@ -790,6 +790,160 @@ export type Database = {
         }
         Relationships: []
       }
+      armory_events: {
+        Row: {
+          action: string
+          actor_id: string
+          actor_name: string
+          after_record: Json
+          before_record: Json | null
+          created_at: string
+          id: string
+          org_unit_id: string
+          reason: string
+          record_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string
+          actor_name: string
+          after_record: Json
+          before_record?: Json | null
+          created_at?: string
+          id?: string
+          org_unit_id: string
+          reason: string
+          record_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          actor_name?: string
+          after_record?: Json
+          before_record?: Json | null
+          created_at?: string
+          id?: string
+          org_unit_id?: string
+          reason?: string
+          record_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "armory_events_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "armory_events_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "armory_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      armory_records: {
+        Row: {
+          asset_id: string | null
+          created_at: string
+          created_by: string
+          destination_unit_id: string | null
+          details: Json
+          id: string
+          kind: string
+          org_unit_id: string
+          parent_id: string | null
+          profile_id: string | null
+          reference: string
+          status: string
+          title: string
+          updated_at: string
+          updated_by: string
+          version: number
+        }
+        Insert: {
+          asset_id?: string | null
+          created_at?: string
+          created_by?: string
+          destination_unit_id?: string | null
+          details?: Json
+          id?: string
+          kind: string
+          org_unit_id: string
+          parent_id?: string | null
+          profile_id?: string | null
+          reference: string
+          status?: string
+          title: string
+          updated_at?: string
+          updated_by?: string
+          version?: number
+        }
+        Update: {
+          asset_id?: string | null
+          created_at?: string
+          created_by?: string
+          destination_unit_id?: string | null
+          details?: Json
+          id?: string
+          kind?: string
+          org_unit_id?: string
+          parent_id?: string | null
+          profile_id?: string | null
+          reference?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "armory_records_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "armory_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "armory_records_destination_unit_id_fkey"
+            columns: ["destination_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "armory_records_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "armory_records_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "armory_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "armory_records_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "armory_records_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_tag_counters: {
         Row: {
           next_value: number
@@ -19478,6 +19632,49 @@ export type Database = {
           id: string
           recipient_type: string
         }[]
+      }
+      armory_adjust_ammunition: {
+        Args: {
+          _id: string
+          _quantity: number
+          _reason: string
+          _version: number
+        }
+        Returns: undefined
+      }
+      armory_can_access: { Args: { _unit: string }; Returns: boolean }
+      armory_can_approve: { Args: { _unit: string }; Returns: boolean }
+      armory_can_manage: { Args: { _unit: string }; Returns: boolean }
+      armory_context: { Args: never; Returns: Json }
+      armory_export_log: {
+        Args: { _count: number; _kind: string; _unit: string }
+        Returns: undefined
+      }
+      armory_save: {
+        Args: {
+          _asset: string
+          _destination: string
+          _details: Json
+          _id: string
+          _kind: string
+          _parent: string
+          _profile: string
+          _reason: string
+          _reference: string
+          _title: string
+          _unit: string
+          _version?: number
+        }
+        Returns: string
+      }
+      armory_transition: {
+        Args: {
+          _action: string
+          _id: string
+          _reason: string
+          _version: number
+        }
+        Returns: undefined
       }
       assign_custom_role: {
         Args: {
