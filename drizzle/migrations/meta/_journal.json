@@ -666,6 +666,13 @@
       "when": 1795030522534,
       "tag": "0094_weapon_register_access_grant",
       "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1795030905758,
+      "tag": "0095_armory_full_lifecycle",
+      "breakpoints": true
     }
   ]
 }

@@ -17,7 +17,7 @@ import { PagedSection } from "@/components/ui/paged-section";
 import { QuickScroll } from "@/components/ui/quick-scroll";
 import { buildCsv } from "@/lib/csv-safe";
 import { downloadCSVString } from "@/lib/download-utils";
-import { ARMORY_LABELS, ARMORY_REPORT_KINDS, armoryReportEntries, armoryMonthlyReport, armoryReportTotals, type ArmoryContext, type ArmoryRecord } from "@/lib/armory";
+import { ARMORY_LABELS, ARMORY_REPORT_KINDS, armoryReportEntries, armoryMonthlyReport, armoryReportTotals, armoryStatusBreakdown, armoryStatusLabel, type ArmoryContext, type ArmoryRecord } from "@/lib/armory";
 
 const KIND_SHORT: Record<string, string> = { custody: "Custody", transfer: "Transfers", maintenance: "Inspections", certification: "Certifications" };
 const monthLabel = (m: string) => { const d = new Date(`${m}-01T00:00:00`); return Number.isNaN(d.getTime()) ? m : format(d, "MMMM yyyy"); };
@@ -53,14 +53,14 @@ export default function ArmoryReport() {
     try { for (const u of logUnits.length ? logUnits : [ctx.commands[0]?.id].filter(Boolean) as string[]) await supabase.rpc("armory_export_log", { _unit: u, _kind: "monthly_report", _count: entries.filter(e => e.unitId === u).length }).then(r => { if (r.error) throw r.error; }); }
     catch { toast.error("Export not authorized"); return; }
     const summary = buildCsv(["Command", "Month", "Custody", "Transfers", "Inspections", "Certifications", "Total"], rows.map(r => [cmdName(r.unitId), monthLabel(r.month), r.custody, r.transfer, r.maintenance, r.certification, r.total]));
-    const detail = buildCsv(["Date", "Command", "Type", "Direction", "Reference", "Title", "Status", "Officer"], entries.map(e => [format(new Date(`${e.date}T00:00:00`), "dd/MM/yyyy"), cmdName(e.unitId), KIND_SHORT[e.record.kind], e.side ?? "", e.record.reference, e.record.title, e.record.status, staff(e.record.profile_id, true)]));
+    const detail = buildCsv(["Date", "Command", "Type", "Direction", "Reference", "Title", "Status", "Officer"], entries.map(e => [format(new Date(`${e.date}T00:00:00`), "dd/MM/yyyy"), cmdName(e.unitId), KIND_SHORT[e.record.kind], e.side ?? "", e.record.reference, e.record.title, armoryStatusLabel(e.record), staff(e.record.profile_id, true)]));
     downloadCSVString(`${summary}\n\n${detail}`, `armory-report-${today}.csv`);
     toast.success("Report downloaded");
   };
 
   const cards: [string, number, string][] = [
     ["Custody issued", totals.custodyIssued, `${totals.custodyReturned} returned · ${totals.custodyOut} still out`],
-    ["Transfers", totals.transfersSent + totals.transfersReceived, `${totals.transfersSent} sent · ${totals.transfersReceived} received`],
+    ["Transfers", totals.transfersSent + totals.transfersReceived, `${totals.transfersSent} outgoing · ${totals.transfersReceived} incoming`],
     ["Inspections", totals.inspectionsDone + totals.inspectionsPending, `${totals.inspectionsDone} done · ${totals.inspectionsPending} pending`],
     ["Certifications", totals.certValid + totals.certExpiring + totals.certExpired, `${totals.certValid} valid · ${totals.certExpiring} expiring · ${totals.certExpired} expired`],
   ];
@@ -87,6 +87,10 @@ export default function ArmoryReport() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map(([t, v, s]) => <Card key={t}><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t}</p><p className="text-2xl font-bold">{recQ.isLoading ? "…" : v}</p><p className="text-xs text-muted-foreground">{s}</p></CardContent></Card>)}
       </div>
+      <Card><CardHeader><CardTitle className="text-base">Lifecycle status</CardTitle></CardHeader><CardContent className="grid gap-4 md:grid-cols-3">
+        {(["custody", "transfer", "maintenance"] as const).map(k => { const recs = [...new Map(entries.map(e => [e.record.id, e.record])).values()]; const rowsB = armoryStatusBreakdown(recs, k); return (
+          <div key={k}><p className="mb-2 text-sm font-medium">{KIND_SHORT[k]}</p><ul className="space-y-1 text-sm">{rowsB.map(b => <li key={b.status} className="flex justify-between gap-2 border-b py-1"><span>{armoryStatusLabel({ kind: k, status: b.status })}</span><strong className={b.count ? "text-primary" : "text-muted-foreground"}>{b.count}</strong></li>)}</ul></div>); })}
+      </CardContent></Card>
       <Card><CardHeader><CardTitle className="text-base">By command and month</CardTitle></CardHeader><CardContent>
         <PagedSection items={rows} label="command months" searchText={r => `${cmdName(r.unitId)} ${monthLabel(r.month)}`}>{page => <div className="overflow-x-auto"><Table className="min-w-[700px]"><TableHeader><TableRow><TableHead>Command</TableHead><TableHead>Month</TableHead><TableHead className="text-right">Custody</TableHead><TableHead className="text-right">Transfers</TableHead><TableHead className="text-right">Inspections</TableHead><TableHead className="text-right">Certifications</TableHead><TableHead className="text-right">Total</TableHead></TableRow></TableHeader><TableBody>
           {page.length ? page.map(r => <TableRow key={`${r.unitId}${r.month}`}><TableCell>{cmdName(r.unitId)}</TableCell><TableCell>{monthLabel(r.month)}</TableCell><TableCell className="text-right">{r.custody}</TableCell><TableCell className="text-right">{r.transfer}</TableCell><TableCell className="text-right">{r.maintenance}</TableCell><TableCell className="text-right">{r.certification}</TableCell><TableCell className="text-right font-semibold">{r.total}</TableCell></TableRow>) : <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">No records for these filters.</TableCell></TableRow>}

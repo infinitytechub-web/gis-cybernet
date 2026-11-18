@@ -17,7 +17,7 @@ describe("armory monthly report", () => {
     expect(armoryReportEntries([rec({ status: "archived" }), rec({ kind: "weapon" })])).toHaveLength(0);
   });
   it("splits custody out vs returned and certification expiry", () => {
-    const t = armoryReportTotals(armoryReportEntries([rec({}), rec({ status: "returned" }), rec({ status: "draft" }),
+    const t = armoryReportTotals(armoryReportEntries([rec({ status: "handed_over" }), rec({ status: "approved" }), rec({ status: "returned" }), rec({ status: "draft" }),
       rec({ kind: "certification", details: { issued: "2026-01-01", expiry: "2026-11-01" } }),
       rec({ kind: "certification", details: { issued: "2026-01-01", expiry: "2026-12-01" } }),
       rec({ kind: "certification", details: { issued: "2026-01-01", expiry: "2027-06-01" } })]), "2026-11-18");
@@ -28,7 +28,7 @@ describe("armory monthly report", () => {
 import { armoryActions, armoryAwaitingApproval, armoryStatusLabel, armoryEditable } from "@/lib/armory";
 describe("armory approvals", () => {
   it("lets an independent command head approve an inspection", () => {
-    expect(armoryActions(rec({ kind: "maintenance", status: "active", created_by: "x", updated_by: "x" }), true, "head")).toEqual(expect.arrayContaining(["approve", "reject"]));
+    expect(armoryActions(rec({ kind: "maintenance", status: "pending", created_by: "x", updated_by: "x" }), true, "head")).toEqual(expect.arrayContaining(["approve", "reject"]));
   });
   it("blocks the creator from approving their own custody request", () => {
     expect(armoryActions(rec({ status: "pending", created_by: "head", updated_by: "head" }), true, "head")).not.toContain("approve");
@@ -37,8 +37,27 @@ describe("armory approvals", () => {
     expect(armoryActions(rec({ kind: "transfer", status: "pending", created_by: "x", updated_by: "x" }), false, "y")).not.toContain("approve");
   });
   it("labels pending records awaiting approval and locks approved inspections", () => {
-    expect(armoryStatusLabel(rec({ kind: "maintenance", status: "active" }))).toBe("Awaiting approval");
+    expect(armoryStatusLabel(rec({ kind: "maintenance", status: "pending" }))).toBe("Awaiting approval");
     expect(armoryAwaitingApproval(rec({ status: "approved" }))).toBe(false);
     expect(armoryEditable(rec({ kind: "maintenance", status: "approved" }))).toBe(false);
+  });
+});
+
+describe("armory lifecycle", () => {
+  it("custody: approved issue must be handed over before return", () => {
+    expect(armoryActions(rec({ status: "approved" }), true, "head")).toEqual(["handover", "cancel"]);
+    expect(armoryActions(rec({ status: "handed_over" }), false, "officer", "officer")).toEqual(["return", "discrepancy", "acknowledge"]);
+  });
+  it("transfer: approved transfer is handed over, not returned", () => {
+    expect(armoryActions(rec({ kind: "transfer", status: "approved" }), false, "y")).toEqual(["handover"]);
+  });
+  it("inspection: scheduled -> start -> submit -> independent approval", () => {
+    expect(armoryActions(rec({ kind: "maintenance", status: "active" }), false, "y")).toEqual(["start"]);
+    expect(armoryActions(rec({ kind: "maintenance", status: "in_progress" }), false, "y")).toEqual(["submit"]);
+    expect(armoryActions(rec({ kind: "maintenance", status: "active", created_by: "x", updated_by: "x" }), true, "head")).not.toContain("approve");
+  });
+  it("approved-but-not-handed-over custody is not counted as issued", () => {
+    const t = armoryReportTotals(armoryReportEntries([rec({ status: "approved" }), rec({ status: "acknowledged" })]), "2026-11-18");
+    expect(t.custodyIssued).toBe(1);
   });
 });

@@ -34,7 +34,7 @@ export const ARMORY_FIELDS: Record<ArmoryKind, ArmoryField[]> = {
   custody: [{key:"authorization",label:"Authorization reference"},{key:"purpose",label:"Purpose",required:true},{key:"due_date",label:"Expected return date",type:"date"}],
   facility: [{key:"address",label:"Administrative address",required:true},{key:"custodian",label:"Custodian"},{key:"capacity",label:"Approved capacity reference"},{key:"verified_date",label:"Last verification",type:"date"}],
   transfer: [{key:"authorization",label:"Transfer authorization reference"},{key:"officers",label:"Administrative officers"},{key:"document",label:"Handover document reference"}],
-  maintenance: [{key:"category",label:"Category",required:true,options:["Routine Inspection","Preventive Service","Repair","Condition Assessment"]},{key:"date",label:"Inspection date",type:"date",required:true},{key:"officer",label:"Inspection officer",required:true},{key:"provider",label:"Authorized service provider"},{key:"compliance",label:"Compliance",options:["Scheduled","Compliant","Overdue"]},{key:"next_review",label:"Next review",type:"date",required:true},{key:"document",label:"Document reference"}],
+  maintenance: [{key:"category",label:"Category",required:true,options:["Routine Inspection","Preventive Service","Repair","Condition Assessment"]},{key:"date",label:"Inspection date",type:"date",required:true},{key:"officer",label:"Inspection officer",required:true},{key:"provider",label:"Authorized service provider"},{key:"compliance",label:"Compliance",options:["Scheduled","Compliant","Overdue"]},{key:"next_review",label:"Next review",type:"date",required:true},{key:"condition_after",label:"Condition after inspection",options:["Serviceable","Needs Maintenance","Unserviceable","Condemned"]},{key:"document",label:"Document reference"}],
   certification: [{key:"provider",label:"Approved training provider",required:true},{key:"issued",label:"Issued date",type:"date",required:true},{key:"expiry",label:"Expiry date",type:"date",required:true},{key:"document",label:"Certification reference"}],
   audit: [{key:"type",label:"Audit type",required:true,options:["Scheduled Inventory Audit","Spot Verification","Annual Reconciliation"]},{key:"scheduled",label:"Scheduled date",type:"date",required:true},{key:"officer",label:"Verification officer",required:true},{key:"supervisor",label:"Supervisor"},{key:"scope",label:"Scope",required:true}],
   finding: [{key:"severity",label:"Severity",required:true,options:["Low","Medium","High","Critical"]},{key:"investigation",label:"Investigation reference"}],
@@ -47,8 +47,8 @@ export function armoryActions(r: ArmoryRecord, canApprove: boolean, userId: stri
   if (["custody","transfer"].includes(r.kind)) {
     if (r.status === "draft") actions = ["submit", ...(r.created_by === userId || canApprove ? ["cancel"] : [])];
     if (r.status === "pending" && independent) actions = ["approve","reject"];
-    if (r.kind === "custody" && ["approved","acknowledged","discrepancy"].includes(r.status)) actions = ["return", ...(r.status !== "discrepancy" ? ["discrepancy"] : []), ...(r.status === "approved" && recipientUserId === userId ? ["acknowledge"] : [])];
-    if (r.kind === "transfer" && r.status === "approved") actions = ["handover"];
+    if (r.status === "approved") actions = ["handover", ...(canApprove ? ["cancel"] : [])];
+    if (r.kind === "custody" && ["handed_over","acknowledged","discrepancy"].includes(r.status)) actions = ["return", ...(r.status !== "discrepancy" ? ["discrepancy"] : []), ...(r.status === "handed_over" && recipientUserId === userId ? ["acknowledge"] : [])];
   } else if (r.kind === "audit") {
     if (r.status === "scheduled") actions = ["submit"];
     if (r.status === "pending" && independent) actions = ["approve","reject"];
@@ -58,14 +58,18 @@ export function armoryActions(r: ArmoryRecord, canApprove: boolean, userId: stri
     if (r.kind === "personnel" && r.status === "authorized" && independent) actions = ["suspend"];
   } else if (r.kind === "weapon") {
     actions = [...(independent ? ["verify"] : []), ...(r.status === "in_store" ? ["maintenance"] : r.status === "maintenance" ? ["release"] : [])];
-  } else if (r.kind === "maintenance" && ["active","pending"].includes(r.status) && independent) actions = ["approve","reject"];
+  } else if (r.kind === "maintenance") {
+    if (r.status === "active") actions = ["start", ...(canApprove ? ["cancel"] : [])];
+    if (r.status === "in_progress") actions = ["submit", ...(canApprove ? ["cancel"] : [])];
+    if (r.status === "pending" && independent) actions = ["approve","reject"];
+  }
   else if (r.kind === "finding" && r.status === "open") actions = ["resolve"];
   else if (r.kind === "corrective") actions = r.status === "open" ? ["start","complete"] : r.status === "in_progress" ? ["complete"] : [];
   if (canApprove && ["weapon","facility","maintenance","certification","personnel"].includes(r.kind) && !["issued","reserved"].includes(r.status)) actions.push("archive");
   return actions;
 }
 export function armoryEditable(r: ArmoryRecord) {
-  if (r.kind === "maintenance" && !["active","pending"].includes(r.status)) return false;
+  if (r.kind === "maintenance" && !["active","in_progress"].includes(r.status)) return false;
   return !["closed","archived"].includes(r.status) && (!["custody","transfer","audit","ammunition","personnel","certification"].includes(r.kind) || ["draft","pending","scheduled"].includes(r.status)) && (!(["custody","transfer"].includes(r.kind)) || r.status === "draft");
 }
 export function armoryTotals(records: ArmoryRecord[]) {
@@ -82,9 +86,9 @@ export const ARMORY_REPORT_KINDS = ["custody", "transfer", "maintenance", "certi
 export type ArmoryReportKind = typeof ARMORY_REPORT_KINDS[number];
 export type ArmoryReportEntry = { record: ArmoryRecord; unitId: string; month: string; date: string; side?: "sent" | "received" };
 export type ArmoryMonthRow = { unitId: string; month: string; custody: number; transfer: number; maintenance: number; certification: number; total: number };
-const CUSTODY_ISSUED = ["approved", "acknowledged", "discrepancy", "returned", "closed"];
+const CUSTODY_ISSUED = ["handed_over", "acknowledged", "discrepancy", "returned", "closed"];
 const CUSTODY_RETURNED = ["returned", "closed"];
-const INSPECTION_PENDING = ["draft", "pending", "scheduled", "active"];
+const INSPECTION_PENDING = ["draft", "pending", "scheduled", "active", "in_progress"];
 
 /** Date a record belongs to for monthly reporting (ISO yyyy-MM-dd). */
 export function armoryReportDate(r: ArmoryRecord) {
@@ -139,13 +143,13 @@ export const ARMORY_APPROVAL_KINDS = ["custody", "transfer", "maintenance"] as c
 /** Records awaiting a Command Head decision: pending custody/transfer, or inspections not yet approved. */
 export function armoryAwaitingApproval(r: ArmoryRecord) {
   if (r.kind === "custody" || r.kind === "transfer") return r.status === "pending";
-  if (r.kind === "maintenance") return r.status === "active" || r.status === "pending";
+  if (r.kind === "maintenance") return r.status === "pending";
   return false;
 }
 /** Plain-language status shown on each record. */
 export function armoryStatusLabel(r: Pick<ArmoryRecord, "kind" | "status">) {
   if (armoryAwaitingApproval(r as ArmoryRecord)) return "Awaiting approval";
-  const map: Record<string, string> = { approved: "Approved", rejected: "Rejected", draft: "Draft", cancelled: "Cancelled", acknowledged: "Acknowledged", returned: "Returned", discrepancy: "Discrepancy", handed_over: "Handed over", received: "Received", archived: "Archived" };
+  const map: Record<string, string> = { approved: "Approved", rejected: "Rejected", draft: "Draft", cancelled: "Cancelled", acknowledged: "Acknowledged", returned: "Returned", discrepancy: "Discrepancy", handed_over: "Handed over", received: "Received", archived: "Archived", active: "Scheduled", in_progress: "In progress", reserved: "Reserved", issued: "Issued", in_store: "In store", maintenance: "Out of service" };
   return map[r.status] ?? r.status.replace(/_/g, " ");
 }
 
@@ -175,4 +179,15 @@ export function weaponServiceSummary(entries: WeaponLifecycleEntry[], today: str
     inspections: insp.length, inspectionsApproved: insp.filter(e => e.record.status === "approved").length,
     lastInspection: last, nextReview: next, reviewOverdue: !!next && next < today,
   };
+}
+
+/** Lifecycle stage order per report type, used for the report's status breakdown. */
+export const ARMORY_LIFECYCLE: Record<"custody" | "transfer" | "maintenance", string[]> = {
+  custody: ["draft", "pending", "approved", "handed_over", "acknowledged", "discrepancy", "returned", "rejected", "cancelled"],
+  transfer: ["draft", "pending", "approved", "handed_over", "received", "rejected", "cancelled"],
+  maintenance: ["active", "in_progress", "pending", "approved", "cancelled"],
+};
+export function armoryStatusBreakdown(records: ArmoryRecord[], kind: keyof typeof ARMORY_LIFECYCLE) {
+  const of = records.filter(r => r.kind === kind && r.status !== "archived");
+  return ARMORY_LIFECYCLE[kind].map(status => ({ status, count: of.filter(r => r.status === status).length }));
 }
