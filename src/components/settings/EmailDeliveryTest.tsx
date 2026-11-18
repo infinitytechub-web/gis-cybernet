@@ -35,7 +35,7 @@ export function EmailDeliveryTest() {
     const { data } = await supabase
       .from("email_domain_status" as any)
       .select("status, last_checked_at, became_active_at")
-      .eq("domain", "notify.gis-cybernet.com")
+      .eq("domain", "mail.admin.infinitytechub.com")
       .maybeSingle();
     if (data) setDomain(data as any);
   };
@@ -101,7 +101,7 @@ export function EmailDeliveryTest() {
           <MailCheck className="h-5 w-5 text-primary" /> Email Delivery Test
         </CardTitle>
         <CardDescription>
-          Send a one-off test email from <span className="font-mono">notify.gis-cybernet.com</span> to verify
+          Send a one-off test email from <span className="font-mono">mail.admin.infinitytechub.com</span> to verify
           the sending pipeline. The status of the request appears below.
         </CardDescription>
       </CardHeader>
@@ -110,7 +110,7 @@ export function EmailDeliveryTest() {
           <div className="flex items-center gap-2 text-sm">
             <ShieldCheck className={`h-4 w-4 ${domain?.status === "active" ? "text-emerald-600" : "text-amber-600"}`} />
             <span className="font-medium">Sender domain:</span>
-            <span className="font-mono">notify.gis-cybernet.com</span>
+            <span className="font-mono">mail.admin.infinitytechub.com</span>
             <Badge
               variant="outline"
               className={
@@ -134,7 +134,7 @@ export function EmailDeliveryTest() {
         </div>
         <p className="text-xs text-muted-foreground">
           DNS is rechecked automatically every 15 minutes. Admins receive an in-app notification the moment{" "}
-          <span className="font-mono">notify.gis-cybernet.com</span> becomes <strong>Active</strong>, and email sending
+          <span className="font-mono">mail.admin.infinitytechub.com</span> becomes <strong>Active</strong>, and email sending
           enables automatically.
         </p>
         <div className="space-y-2">
@@ -187,7 +187,7 @@ export function EmailDeliveryTest() {
               )}
               <div className="text-xs text-muted-foreground">
                 Delivery completes via the email queue within ~5–15 seconds. If DNS verification is still pending for{" "}
-                <span className="font-mono">notify.gis-cybernet.com</span>, the message stays queued until the domain is active.
+                <span className="font-mono">mail.admin.infinitytechub.com</span>, the message stays queued until the domain is active.
               </div>
             </div>
           )}

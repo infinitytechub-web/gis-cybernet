@@ -1,7 +1,6 @@
-// csrf-classification: cron: protected by isInternalCaller / x-cron-secret
+import { createHash, timingSafeEqual } from 'node:crypto'
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { isInternalCaller } from '../_shared/cron-auth.ts'
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
@@ -19,8 +18,8 @@ function isRateLimited(error: unknown): boolean {
   return error instanceof Error && error.message.includes('429')
 }
 
-// Check if an error is a forbidden (403) response, which means emails are
-// disabled for this project. Retrying won't help — move straight to DLQ.
+// Check if an error is a forbidden (403) response. Retrying won't help.
+// Move straight to DLQ.
 function isForbidden(error: unknown): boolean {
   if (error && typeof error === 'object' && 'status' in error) {
     return (error as { status: number }).status === 403
@@ -36,10 +35,32 @@ function getRetryAfterSeconds(error: unknown): number {
   return 60
 }
 
-// JWT claims parsing removed — authentication is now performed by
-// isInternalCaller(), which compares the Bearer token against the actual
-// SUPABASE_SERVICE_ROLE_KEY secret. This avoids relying on unsigned JWT
-// payloads, which could be forged when verify_jwt=false at the gateway.
+function parseJwtClaims(token: string): Record<string, unknown> | null {
+  const parts = token.split('.')
+  if (parts.length < 2) {
+    return null
+  }
+
+  try {
+    const payload = parts[1]
+      .replaceAll('-', '+')
+      .replaceAll('_', '/')
+      .padEnd(Math.ceil(parts[1].length / 4) * 4, '=')
+
+    return JSON.parse(atob(payload)) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+// Digests give timingSafeEqual the equal-length inputs it requires.
+function keyMatches(provided: string, expected: string): boolean {
+  if (!provided) {
+    return false
+  }
+  const digest = (value: string) => createHash('sha256').update(value).digest()
+  return timingSafeEqual(digest(provided), digest(expected))
+}
 
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
@@ -63,7 +84,7 @@ async function moveToDlq(
     payload,
   })
   if (error) {
-    console.error('Failed to move message to DLQ', { queue, msg_id: msg.msg_id, reason, error })
+    console.error('Failed to move message to DLQ', { queue, msg_id: msg.msg_id, reason, code: error.code, message: error.message })
   }
 }
 
@@ -80,16 +101,26 @@ Deno.serve(async (req) => {
     )
   }
 
-  // Authoritative caller check: requires either the actual service-role key
-  // (used by pg_cron self-invocations) or a matching CRON_SECRET header.
-  // This does NOT trust the JWT payload — it compares against the real secret.
-  if (!isInternalCaller(req)) {
-    return new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
-    )
-  }
+  const authHeader = req.headers.get('Authorization')
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : ''
 
+  // verify_jwt=true also lets the new API keys through the gateway. Accept only the service role
+  // key as the Bearer (Cloud Proxy puts its own secret key in apikey) or a service_role JWT.
+  if (!keyMatches(token, supabaseServiceKey)) {
+    if (!token) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+    const claims = parseJwtClaims(token)
+    if (claims?.role !== 'service_role') {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+  }
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
@@ -124,7 +155,7 @@ Deno.serve(async (req) => {
     })
 
     if (readError) {
-      console.error('Failed to read email batch', { queue, error: readError })
+      console.error('Failed to read email batch', { queue, code: readError.code, message: readError.message })
       continue
     }
 
@@ -155,7 +186,8 @@ Deno.serve(async (req) => {
       if (failedRowsError) {
         console.error('Failed to load failed-attempt counters', {
           queue,
-          error: failedRowsError,
+          code: failedRowsError.code,
+          message: failedRowsError.message,
         })
       } else {
         for (const row of failedRows ?? []) {
@@ -222,7 +254,7 @@ Deno.serve(async (req) => {
             message_id: msg.msg_id,
           })
           if (dupDelError) {
-            console.error('Failed to delete duplicate message from queue', { queue, msg_id: msg.msg_id, error: dupDelError })
+            console.error('Failed to delete duplicate message from queue', { queue, msg_id: msg.msg_id, code: dupDelError.code, message: dupDelError.message })
           }
           continue
         }
@@ -234,7 +266,6 @@ Deno.serve(async (req) => {
             run_id: payload.run_id,
             to: payload.to,
             from: payload.from,
-            ...(payload.reply_to ? { reply_to: payload.reply_to } : {}),
             sender_domain: payload.sender_domain,
             subject: payload.subject,
             html: payload.html,
@@ -265,7 +296,7 @@ Deno.serve(async (req) => {
           message_id: msg.msg_id,
         })
         if (delError) {
-          console.error('Failed to delete sent message from queue', { queue, msg_id: msg.msg_id, error: delError })
+          console.error('Failed to delete sent message from queue', { queue, msg_id: msg.msg_id, code: delError.code, message: delError.message })
         }
         totalProcessed++
       } catch (error) {
@@ -305,12 +336,12 @@ Deno.serve(async (req) => {
           )
         }
 
-        // 403 means emails are disabled for this project — retrying won't help.
-        // Move straight to DLQ and stop processing the rest of the batch.
+        // 403s are permanent configuration or authorization failures for this
+        // message, so move straight to DLQ and stop processing the rest of the batch.
         if (isForbidden(error)) {
-          await moveToDlq(supabase, queue, msg, 'Emails disabled for this project')
+          await moveToDlq(supabase, queue, msg, errorMsg.slice(0, 1000))
           return new Response(
-            JSON.stringify({ processed: totalProcessed, stopped: 'emails_disabled' }),
+            JSON.stringify({ processed: totalProcessed, stopped: 'forbidden' }),
             { headers: { 'Content-Type': 'application/json' } }
           )
         }

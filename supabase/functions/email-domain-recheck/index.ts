@@ -9,7 +9,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SENDER_DOMAIN = "notify.gis-cybernet.com";
+const SENDER_DOMAIN = "mail.admin.infinitytechub.com";
 const LOVABLE_API = "https://api.lovable.app";
 
 interface DomainRecord {

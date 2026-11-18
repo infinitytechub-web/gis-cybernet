@@ -21,7 +21,7 @@ const TestEmail = ({ sentBy, sentAt, note }: TestEmailProps) => (
         <Heading style={h1}>{SITE_NAME} — Test Email</Heading>
         <Text style={text}>
           This is a test message confirming that email delivery from{' '}
-          <strong>notify.gis-cybernet.com</strong> is operational.
+          <strong>mail.admin.infinitytechub.com</strong> is operational.
         </Text>
         <Section style={card}>
           <Text style={meta}><strong>Sent by:</strong> {sentBy || 'Administrator'}</Text>

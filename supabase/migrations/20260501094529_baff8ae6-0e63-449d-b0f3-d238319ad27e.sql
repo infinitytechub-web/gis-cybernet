@@ -25,5 +25,5 @@ WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
 -- Seed the row for our sender domain
 INSERT INTO public.email_domain_status (domain, status)
-VALUES ('notify.gis-cybernet.com', 'pending')
+VALUES ('mail.admin.infinitytechub.com', 'pending')
 ON CONFLICT (domain) DO NOTHING;
