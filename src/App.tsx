@@ -124,6 +124,7 @@ const ArmoryWeapons = lazy(() => import("./pages/ArmoryWeapons"));
 const ArmoryReport = lazy(() => import("./pages/ArmoryReport"));
 const WeaponLifecycle = lazy(() => import("./pages/WeaponLifecycle"));
 const ArmoryCommandDashboard = lazy(() => import("./pages/ArmoryCommandDashboard"));
+const ArmoryHeadsPortal = lazy(() => import("./pages/ArmoryHeadsPortal"));
 const ArmoryOfficerPortal = lazy(() => import("./pages/ArmoryOfficerPortal"));
 const ArmoryMyTraining = lazy(() => import("./pages/ArmoryMyTraining"));
 const ArmoryTrainingStatus = lazy(() => import("./pages/ArmoryTrainingStatus"));
@@ -337,6 +338,7 @@ function App() {
           <Route path="/armory-weapons/dashboard" element={<ProtectedRoute module="armory-weapons"><Layout><ArmoryCommandDashboard /></Layout></ProtectedRoute>} />
           <Route path="/armory-weapons/lifecycle" element={<ProtectedRoute module="armory-weapons"><Layout><WeaponLifecycle /></Layout></ProtectedRoute>} />
           <Route path="/armory-weapons/report" element={<ProtectedRoute module="armory-weapons"><Layout><ArmoryReport /></Layout></ProtectedRoute>} />
+          <Route path="/armory-weapons/heads" element={<ProtectedRoute module="armory-weapons"><Layout><ArmoryHeadsPortal /></Layout></ProtectedRoute>} />
           <Route path="/armory-weapons/approvals" element={<ProtectedRoute module="armory-weapons"><Layout><ArmoryApprovals /></Layout></ProtectedRoute>} />
          <Route path="/command-vault/gps" element={<ProtectedRoute module="command-vault"><Layout><GpsAddresses /></Layout></ProtectedRoute>} />
          {/* GPS Hub aliases — keep deep-links to the canonical command-vault path. */}
