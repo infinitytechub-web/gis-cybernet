@@ -652,6 +652,13 @@
       "when": 1795030121085,
       "tag": "0092_armory_access_toggle",
       "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1795030194072,
+      "tag": "0093_armory_weapon_register_fields",
+      "breakpoints": true
     }
   ]
 }
