@@ -86,8 +86,8 @@ export default function ArmoryApprovals() {
       </div>
       <ArmoryNav />
       {ctxQ.isSuccess && !ctx.commands.length ? <Card><CardContent className="p-6 text-sm text-muted-foreground">You have no armory access for any command.</CardContent></Card> : <>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {(["custody", "transfer", "maintenance"] as const).map(k => <Card key={k}><CardContent className="p-4"><p className="text-sm text-muted-foreground">{KIND[k]} awaiting approval</p><p className="text-2xl font-bold">{recQ.isLoading ? "…" : counts[k]}</p></CardContent></Card>)}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        {(["custody", "transfer", "maintenance"] as const).map(k => <Card key={k}><CardContent className="p-4"><p className="text-xs text-muted-foreground sm:text-sm">{KIND[k]} awaiting approval</p><p className="text-2xl font-bold">{recQ.isLoading ? "…" : counts[k]}</p></CardContent></Card>)}
       </div>
       <Card><CardContent className="grid gap-3 p-4 sm:grid-cols-2">
         <div><Label>Command</Label><SearchableSelect value={unit} onValueChange={setUnit} options={[{ value: "all", label: "All my commands" }, ...ctx.commands.map(c => ({ value: c.id, label: c.name }))]} /></div>
@@ -95,10 +95,30 @@ export default function ArmoryApprovals() {
       </CardContent></Card>
       {recQ.isError && <Card><CardContent className="flex items-center justify-between p-4 text-sm text-destructive">Could not load requests.<Button size="sm" variant="outline" onClick={() => recQ.refetch()}>Retry</Button></CardContent></Card>}
       <Card><CardHeader className="space-y-3">
-        <Tabs value={view} onValueChange={setView}><TabsList><TabsTrigger value="awaiting">Awaiting approval ({awaiting.length})</TabsTrigger><TabsTrigger value="decided">Decided ({decided.length})</TabsTrigger></TabsList></Tabs>
+        <Tabs value={view} onValueChange={setView}><TabsList className="h-auto w-full flex-wrap justify-start sm:w-auto"><TabsTrigger value="awaiting">Awaiting approval ({awaiting.length})</TabsTrigger><TabsTrigger value="decided">Decided ({decided.length})</TabsTrigger></TabsList></Tabs>
         <CardTitle className="sr-only">{view === "awaiting" ? "Awaiting approval" : "Decided"}</CardTitle>
       </CardHeader><CardContent>
-        <PagedSection items={items} label="requests" searchText={r => `${r.reference} ${r.title} ${staff(r.profile_id)} ${cmd(r.org_unit_id)?.name ?? ""} ${armoryStatusLabel(r)}`}>{page => <div className="overflow-x-auto"><Table className="min-w-[700px]"><TableHeader><TableRow><TableHead>Request</TableHead><TableHead>Command</TableHead><TableHead>Officer / weapon</TableHead><TableHead>Status</TableHead><TableHead>Updated</TableHead><TableHead>Decision</TableHead></TableRow></TableHeader><TableBody>
+        <PagedSection items={items} label="requests" searchText={r => `${r.reference} ${r.title} ${staff(r.profile_id)} ${cmd(r.org_unit_id)?.name ?? ""} ${armoryStatusLabel(r)}`}>{page => <>
+          <ul className="space-y-2 sm:hidden" aria-label="Requests">
+            {page.length ? page.map(r => <li key={r.id} className="rounded-md border border-border p-3 space-y-2">
+              <div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="font-medium">{r.reference}</div><div className="text-sm break-words">{r.title}</div></div><Badge variant={armoryAwaitingApproval(r) ? "secondary" : r.status === "rejected" ? "destructive" : "outline"} className="shrink-0">{armoryStatusLabel(r)}</Badge></div>
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                <div><dt className="text-xs text-muted-foreground">Type</dt><dd>{KIND[r.kind]}</dd></div>
+                <div className="min-w-0"><dt className="text-xs text-muted-foreground">Command</dt><dd className="break-words">{cmd(r.org_unit_id)?.name ?? "—"}{r.kind === "transfer" && r.destination_unit_id ? ` → ${cmd(r.destination_unit_id)?.name ?? "another command"}` : ""}</dd></div>
+                <div className="min-w-0"><dt className="text-xs text-muted-foreground">Officer</dt><dd className="break-words">{r.profile_id ? staff(r.profile_id) : "—"}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Weapon</dt><dd>{r.asset_id ? asset(r.asset_id)?.reference ?? "Weapon" : "—"}</dd></div>
+                <div className="col-span-2"><dt className="text-xs text-muted-foreground">Updated</dt><dd>{when(r.updated_at)}</dd></div>
+              </dl>
+              <div className="grid grid-cols-3 gap-2">
+                <Button size="sm" variant="ghost" className="min-h-10" onClick={() => setDetail(r)}><Eye className="mr-1 h-4 w-4" />View</Button>
+                {armoryAwaitingApproval(r) && (canDecide(r, "approve") ? <>
+                  <Button size="sm" className="min-h-10" onClick={() => { setDecision({ record: r, action: "approve" }); setReason(""); }}><CheckCircle2 className="mr-1 h-4 w-4" />Approve</Button>
+                  <Button size="sm" variant="outline" className="min-h-10" onClick={() => { setDecision({ record: r, action: "reject" }); setReason(""); }}><XCircle className="mr-1 h-4 w-4" />Reject</Button>
+                </> : <span className="col-span-2 self-center text-xs text-muted-foreground">{whyNot(r)}</span>)}
+              </div>
+            </li>) : <li className="py-6 text-center text-sm text-muted-foreground">{view === "awaiting" ? "No requests are waiting for approval." : "No decided requests yet."}</li>}
+          </ul>
+          <div className="hidden overflow-x-auto sm:block"><Table className="min-w-[700px]"><TableHeader><TableRow><TableHead>Request</TableHead><TableHead>Command</TableHead><TableHead>Officer / weapon</TableHead><TableHead>Status</TableHead><TableHead>Updated</TableHead><TableHead>Decision</TableHead></TableRow></TableHeader><TableBody>
           {page.length ? page.map(r => <TableRow key={r.id}>
             <TableCell><div className="font-medium">{r.reference}</div><div className="text-sm">{r.title}</div><div className="text-xs text-muted-foreground">{KIND[r.kind]}</div></TableCell>
             <TableCell>{cmd(r.org_unit_id)?.name ?? "—"}{r.kind === "transfer" && r.destination_unit_id && <div className="text-xs text-muted-foreground">to {cmd(r.destination_unit_id)?.name ?? "another command"}</div>}</TableCell>
@@ -113,13 +133,13 @@ export default function ArmoryApprovals() {
               </> : <span className="text-xs text-muted-foreground">{whyNot(r)}</span>)}
             </div></TableCell>
           </TableRow>) : <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">{view === "awaiting" ? "No requests are waiting for approval." : "No decided requests yet."}</TableCell></TableRow>}
-        </TableBody></Table></div>}</PagedSection>
+        </TableBody></Table></div></>}</PagedSection>
       </CardContent></Card></>}
 
       <Dialog open={!!decision} onOpenChange={o => { if (!o) setDecision(null); }}>
         <DialogContent><DialogHeader><DialogTitle>{decision?.action === "approve" ? "Approve" : "Reject"} {decision && KIND[decision.record.kind].toLowerCase()} request {decision?.record.reference}</DialogTitle></DialogHeader>
           <div className="space-y-2"><Label htmlFor="armory-decision-reason">Reason (required)</Label><Textarea id="armory-decision-reason" value={reason} maxLength={1000} onChange={e => setReason(e.target.value)} /></div>
-          <DialogFooter><Button variant="outline" onClick={() => setDecision(null)}>Cancel</Button><Button variant={decision?.action === "reject" ? "destructive" : "default"} disabled={decide.isPending || reason.trim().length < 3} onClick={() => decide.mutate()}>{decision?.action === "approve" ? "Approve" : "Reject"}</Button></DialogFooter>
+          <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setDecision(null)}>Cancel</Button><Button variant={decision?.action === "reject" ? "destructive" : "default"} disabled={decide.isPending || reason.trim().length < 3} onClick={() => decide.mutate()}>{decision?.action === "approve" ? "Approve" : "Reject"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -75,10 +75,15 @@ export default function ArmoryCommandDashboard() {
             {!d.weaponsTotal && <p className="text-sm text-muted-foreground">No weapons registered in this command.</p>}
           </CardContent></Card>
           <Card><CardHeader><CardTitle className="text-base">Waiting on a decision</CardTitle></CardHeader><CardContent>
-            <PagedSection items={d.pending} label="records">{rows => <Table><TableHeader><TableRow><TableHead>Reference</TableHead><TableHead>Type</TableHead><TableHead>Status</TableHead><TableHead>Command</TableHead><TableHead>Open</TableHead></TableRow></TableHeader>
+            <PagedSection items={d.pending} label="records">{rows => <>
+              <ul className="space-y-2 sm:hidden">{rows.map(r => <li key={r.id} className="rounded-md border border-border p-3">
+                <div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="font-medium">{r.reference}</div><div className="text-xs text-muted-foreground break-words">{r.title}</div></div><Badge variant="outline" className="shrink-0">{KIND[r.kind] ?? ARMORY_LABELS[r.kind]}</Badge></div>
+                <Button size="sm" className="mt-2 min-h-10 w-full" asChild><Link to={r.kind === "transfer" && r.destination_unit_id === unit && r.status === "handed_over" ? "/armory-weapons" : "/armory-weapons/approvals"}>{r.kind === "transfer" && r.destination_unit_id === unit && r.status === "handed_over" ? "Receive" : "Review & approve"}</Link></Button>
+              </li>)}</ul>
+              <div className="hidden overflow-x-auto sm:block"><Table><TableHeader><TableRow><TableHead>Reference</TableHead><TableHead>Type</TableHead><TableHead>Status</TableHead><TableHead>Command</TableHead><TableHead>Open</TableHead></TableRow></TableHeader>
               <TableBody>{rows.map(r => <TableRow key={r.id}><TableCell><div className="font-medium">{r.reference}</div><div className="text-xs text-muted-foreground">{r.title}</div></TableCell><TableCell>{KIND[r.kind] ?? ARMORY_LABELS[r.kind]}</TableCell><TableCell><Badge variant="outline">{r.kind === "transfer" && r.destination_unit_id === unit && r.status === "handed_over" ? "Awaiting receipt" : armoryStatusLabel(r)}</Badge></TableCell><TableCell>{cmd(r.org_unit_id)}</TableCell>
                 <TableCell><Button variant="link" size="sm" className="h-auto px-0" asChild><Link to={r.asset_id ? `/armory-weapons/lifecycle?weapon=${r.asset_id}` : "/armory-weapons/approvals"}>{r.asset_id ? "Weapon history" : "Approvals"}</Link></Button></TableCell></TableRow>)}
-                {!rows.length && <TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">Nothing is waiting on a decision.</TableCell></TableRow>}</TableBody></Table>}</PagedSection>
+                {!rows.length && <TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">Nothing is waiting on a decision.</TableCell></TableRow>}</TableBody></Table></div></>}</PagedSection>
           </CardContent></Card>
         </>}
       </>}
