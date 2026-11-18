@@ -14,7 +14,7 @@ export type ArmoryRecord = {
   status: string; details: Record<string, string>; created_by: string; updated_by: string;
   created_at: string; updated_at: string; version: number;
 };
-export type ArmoryCommand = { id: string; name: string; can_approve: boolean; can_manage: boolean; active: boolean };
+export type ArmoryCommand = { id: string; name: string; can_approve: boolean; can_manage: boolean; can_manage_weapons?: boolean; active: boolean };
 export type ArmoryStaff = { id: string; user_id: string | null; first_name: string; last_name: string; staff_id: string; org_unit_id: string };
 export type ArmoryContext = { commands: ArmoryCommand[]; staff: ArmoryStaff[] };
 export const armoryFormSchema = z.object({

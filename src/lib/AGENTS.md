@@ -3,3 +3,4 @@
 # Armory integration
 - Armory registers use command-scoped RPC writes, independently approved custody/stock changes and immutable events; documents reuse categorized Command Vault storage, while real personnel stay in existing profiles — why: preserve one identity and file-security boundary without demo authentication or duplicate staff.
 - Armory Report aggregates caller-visible armory_records client-side after fetching all pages; transfers count under origin and destination — why: no extra register or RPC that could widen scope.
+- Per-officer armory capabilities (armory-weapons, armory-weapon-register) are granted only through Super Admin `set_officer_capability` with reason and system audit; weapon-register holders may add/edit weapons but not change status or delete — why: one audited grant path that cannot widen approval authority.

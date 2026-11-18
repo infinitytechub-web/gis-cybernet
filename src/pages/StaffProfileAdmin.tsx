@@ -92,6 +92,7 @@ export default function StaffProfileAdmin() {
               <div><Label htmlFor="spa-reason">Reason</Label><Textarea id="spa-reason" value={reason} onChange={(e) => setReason(e.target.value)} /></div>
               <Button onClick={save} disabled={busy}>{busy ? "Saving…" : "Save changes"}</Button>
               <ArmoryAccessToggle key={picked.id} profileId={picked.id} />
+              <ArmoryAccessToggle key={`w-${picked.id}`} profileId={picked.id} capability="armory-weapon-register" label="Weapon Register access" note="Lets the officer add and edit weapons in their command. Needs Armory & Weapons access too; deleting stays with command heads." />
             </>}
           </CardContent></Card>
       </div>

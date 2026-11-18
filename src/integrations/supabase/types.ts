@@ -19646,6 +19646,7 @@ export type Database = {
       armory_can_access: { Args: { _unit: string }; Returns: boolean }
       armory_can_approve: { Args: { _unit: string }; Returns: boolean }
       armory_can_manage: { Args: { _unit: string }; Returns: boolean }
+      armory_can_manage_weapons: { Args: { _unit: string }; Returns: boolean }
       armory_context: { Args: never; Returns: Json }
       armory_export_log: {
         Args: { _count: number; _kind: string; _unit: string }
@@ -21259,6 +21260,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      officer_capability_state: {
+        Args: { _capability: string; _profile_id: string }
+        Returns: Json
+      }
       org_position_roster: {
         Args: never
         Returns: {
@@ -21817,6 +21822,15 @@ export type Database = {
       }
       set_inventory_alert_webhook: {
         Args: { _record_id: string; _source: string; _webhook_url: string }
+        Returns: undefined
+      }
+      set_officer_capability: {
+        Args: {
+          _capability: string
+          _grant: boolean
+          _profile_id: string
+          _reason: string
+        }
         Returns: undefined
       }
       set_record_status: {
