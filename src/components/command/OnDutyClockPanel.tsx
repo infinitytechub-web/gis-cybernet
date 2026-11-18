@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useStaffRoster } from "@/hooks/useStaffRoster";
 import { RosterClockInForm } from "@/components/command/RosterClockInForm";
 
