@@ -5,3 +5,4 @@
 - Armory Report aggregates caller-visible armory_records client-side after fetching all pages; transfers count under origin and destination — why: no extra register or RPC that could widen scope.
 - Per-officer armory capabilities (armory-weapons, armory-weapon-register) are granted only through Super Admin `set_officer_capability` with reason and system audit; weapon-register holders may add/edit weapons but not change status or delete — why: one audited grant path that cannot widen approval authority.
 - Weapon Lifecycle derives each weapon history and service report client-side from caller-visible armory_records linked by asset_id, with audited CSV via armory_export_log — why: no duplicate history register or wider read scope.
+- Armory Command Dashboard derives per-command figures client-side from caller-visible armory_records (armoryCommandDashboard) and links into existing approvals/lifecycle/register screens — why: no extra aggregate RPC that could widen scope.

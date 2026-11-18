@@ -149,7 +149,7 @@ export function armoryAwaitingApproval(r: ArmoryRecord) {
 /** Plain-language status shown on each record. */
 export function armoryStatusLabel(r: Pick<ArmoryRecord, "kind" | "status">) {
   if (armoryAwaitingApproval(r as ArmoryRecord)) return "Awaiting approval";
-  const map: Record<string, string> = { approved: "Approved", rejected: "Rejected", draft: "Draft", cancelled: "Cancelled", acknowledged: "Acknowledged", returned: "Returned", discrepancy: "Discrepancy", handed_over: "Handed over", received: "Received", archived: "Archived", active: "Scheduled", in_progress: "In progress", reserved: "Reserved", issued: "Issued", in_store: "In store", maintenance: "Out of service" };
+  const map: Record<string, string> = { pending: "Awaiting verification", verified: "Verified", authorized: "Authorized", approved: "Approved", rejected: "Rejected", draft: "Draft", cancelled: "Cancelled", acknowledged: "Acknowledged", returned: "Returned", discrepancy: "Discrepancy", handed_over: "Handed over", received: "Received", archived: "Archived", active: "Scheduled", in_progress: "In progress", reserved: "Reserved", issued: "Issued", in_store: "In store", maintenance: "Out of service" };
   return map[r.status] ?? r.status.replace(/_/g, " ");
 }
 
@@ -190,4 +190,27 @@ export const ARMORY_LIFECYCLE: Record<"custody" | "transfer" | "maintenance", st
 export function armoryStatusBreakdown(records: ArmoryRecord[], kind: keyof typeof ARMORY_LIFECYCLE) {
   const of = records.filter(r => r.kind === kind && r.status !== "archived");
   return ARMORY_LIFECYCLE[kind].map(status => ({ status, count: of.filter(r => r.status === status).length }));
+}
+
+export const WEAPON_CONDITIONS = ["Serviceable", "Needs Maintenance", "Unserviceable", "Condemned"] as const;
+/** Per-command dashboard figures from caller-visible records. */
+export function armoryCommandDashboard(records: ArmoryRecord[], unitId: string, today: string) {
+  const mine = records.filter(r => r.status !== "archived" && (r.org_unit_id === unitId || (r.kind === "transfer" && r.destination_unit_id === unitId)));
+  const soon = new Date(`${today}T00:00:00Z`); soon.setUTCDate(soon.getUTCDate() + 30); const soonIso = soon.toISOString().slice(0, 10);
+  const weapons = mine.filter(r => r.kind === "weapon" && r.org_unit_id === unitId);
+  const insp = mine.filter(r => r.kind === "maintenance" && r.org_unit_id === unitId);
+  const certs = mine.filter(r => r.kind === "certification" && r.org_unit_id === unitId && !["rejected"].includes(r.status));
+  const pending = mine.filter(r => r.org_unit_id === unitId && r.status === "pending"
+    || (r.kind === "transfer" && r.destination_unit_id === unitId && r.status === "handed_over"));
+  return {
+    pending,
+    pendingByKind: { custody: pending.filter(r => r.kind === "custody").length, transfer: pending.filter(r => r.kind === "transfer").length, maintenance: pending.filter(r => r.kind === "maintenance").length, other: pending.filter(r => !["custody", "transfer", "maintenance"].includes(r.kind)).length },
+    inspections: { scheduled: insp.filter(r => r.status === "active").length, inProgress: insp.filter(r => r.status === "in_progress").length, awaiting: insp.filter(r => r.status === "pending").length, approved: insp.filter(r => r.status === "approved").length,
+      overdue: insp.filter(r => r.status === "approved" && !!r.details.next_review && r.details.next_review < today).length },
+    certifications: { pending: certs.filter(r => r.status === "pending").length, valid: certs.filter(r => r.status === "verified" && (r.details.expiry ?? "") > soonIso).length,
+      expiring: certs.filter(r => { const x = r.details.expiry ?? ""; return x >= today && x <= soonIso; }).length, expired: certs.filter(r => { const x = r.details.expiry ?? ""; return !!x && x < today; }).length },
+    weaponsByCondition: [...WEAPON_CONDITIONS, "Not set"].map(c => ({ condition: c, count: weapons.filter(w => (w.details.condition || "Not set") === c).length })),
+    weaponsTotal: weapons.length,
+    weaponsByStatus: { in_store: weapons.filter(w => w.status === "in_store").length, reserved: weapons.filter(w => w.status === "reserved").length, issued: weapons.filter(w => w.status === "issued").length, maintenance: weapons.filter(w => w.status === "maintenance").length },
+  };
 }
