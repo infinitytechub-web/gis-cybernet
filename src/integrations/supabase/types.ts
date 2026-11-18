@@ -19515,6 +19515,22 @@ export type Database = {
           staff_name: string
         }[]
       }
+      attendance_report_rows: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          check_in: string
+          check_out: string
+          command_name: string
+          date: string
+          id: string
+          org_unit_id: string
+          owner_user_id: string
+          profile_id: string
+          staff_id: string
+          staff_name: string
+          status: string
+        }[]
+      }
       attendance_validation: {
         Args: { _from: string; _period: string; _to: string }
         Returns: {

@@ -106,6 +106,7 @@ export default function HrHub() {
           ["Staff Applications", "/hr/applications"],
           ["Pending HR", "/hr/pending"],
           ["Attendance", "/attendance"],
+          ["Attendance Report", "/attendance/report"],
           ["Attendance & Shifts", "/shifts"],
           ["Leave Requests", "/leave"],
           ["Leave Approvals", "/leave/approvals"],

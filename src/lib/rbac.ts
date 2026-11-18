@@ -106,7 +106,7 @@ export const MODULES: ModuleDef[] = [
   { key: "departments", label: "Departments", feature: "Departments", tier: "module", roles: [...COMMAND, ...IPSE_TIER], paths: ["/departments"] },
   {
     key: "attendance-overview", label: "Attendance Overview", tier: "module",
-    roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/attendance/overview"],
+    roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/attendance/overview", "/attendance/report"],
   },
   {
     key: "attendance-weekly", label: "Weekly Attendance", tier: "module",

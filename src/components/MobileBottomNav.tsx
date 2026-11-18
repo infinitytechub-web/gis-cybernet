@@ -42,6 +42,7 @@ const moreItems = [
   { title: "Shift Roster", url: "/shift-roster", icon: CalendarCheck, iconColor: "text-primary", group: "Workforce" },
   { title: "Shifts", url: "/shifts", icon: Clock, iconColor: "text-indigo-600 dark:text-indigo-400", group: "Workforce" },
   { title: "Attendance Overview", url: "/attendance/overview", icon: BarChart3, iconColor: "text-teal-700 dark:text-teal-300", group: "Workforce" },
+  { title: "Attendance Report", url: "/attendance/report", icon: BarChart3, iconColor: "text-primary", group: "Workforce" },
   { title: "Weekly Attendance", url: "/attendance/weekly", icon: CalendarDays, iconColor: "text-cyan-700 dark:text-cyan-300", group: "Workforce" },
   { title: "Duty Roster", url: "/roster", icon: CalendarDays, iconColor: "text-cyan-600 dark:text-cyan-400", group: "Workforce" },
   { title: "Leave Calendar", url: "/leave/calendar", icon: CalendarDays, iconColor: "text-cyan-700 dark:text-cyan-300", group: "Workforce" },

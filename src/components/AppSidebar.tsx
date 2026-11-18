@@ -84,6 +84,7 @@ const myDutyItems = [
 const attendanceItems = [
   { title: "Attendance", url: "/attendance", icon: CalendarCheck, iconColor: "text-green-600 dark:text-green-400" },
   { title: "Attendance Overview", url: "/attendance/overview", icon: BarChart3, iconColor: "text-teal-700 dark:text-teal-300" },
+  { title: "Attendance Report", url: "/attendance/report", icon: BarChart3, iconColor: "text-primary" },
   { title: "Weekly Attendance", url: "/attendance/weekly", icon: CalendarDays, iconColor: "text-cyan-700 dark:text-cyan-300" },
   { title: "Office Shifts", url: "/shifts", icon: Clock, iconColor: "text-indigo-600 dark:text-indigo-400" },
 ];

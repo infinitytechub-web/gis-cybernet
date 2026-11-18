@@ -610,6 +610,13 @@
       "when": 1795026705463,
       "tag": "0086_secure_self_attendance_clock",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1795027654466,
+      "tag": "0087_attendance_report_rows",
+      "breakpoints": true
     }
   ]
 }

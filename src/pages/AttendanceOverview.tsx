@@ -148,6 +148,7 @@ export default function AttendanceOverview() {
         actions={
           <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm"><Link to="/shift-roster">Shift Roster</Link></Button>
+          <Button asChild variant="outline" size="sm"><Link to="/attendance/report">Clock history report</Link></Button>
           <Button variant="secondary" size="sm" onClick={exportCsv} disabled={!!error || isLoading || rows.length === 0}>
             <FileSpreadsheet className="mr-2 h-4 w-4" aria-hidden="true" />
             Export

@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const ATTENDANCE_REPORT_KEYS = [
-  "attendance-hours-summary", "attendance_validation", "my-shift-tracker", "today-duty",
+  "attendance-hours-summary", "attendance-report", "attendance_validation", "my-shift-tracker", "today-duty",
 ] as const;
 
 /** Refresh scoped reads, never broadcast staff records through the client. */

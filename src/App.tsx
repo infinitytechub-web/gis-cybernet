@@ -67,6 +67,7 @@ const Shifts = lazy(() => import("./pages/Shifts"));
 const DutyRoster = lazy(() => import("./pages/DutyRoster"));
 const Attendance = lazy(() => import("./pages/Attendance"));
 const AttendanceOverview = lazy(() => import("./pages/AttendanceOverview"));
+const AttendanceReport = lazy(() => import("./pages/AttendanceReport"));
 const AttendanceWeekly = lazy(() => import("./pages/AttendanceWeekly"));
 const MyDashboard = lazy(() => import("./pages/MyDashboard"));
 const CommandPortal = lazy(() => import("./pages/CommandPortal"));
@@ -244,6 +245,7 @@ function App() {
           <Route path="/security/biometrics" element={<ProtectedRoute module="biometric-security-admin"><Layout><SecurityBiometricsAdmin /></Layout></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute module="attendance"><Layout><Attendance /></Layout></ProtectedRoute>} />
           <Route path="/attendance/overview" element={<ProtectedRoute module="attendance-overview"><Layout><AttendanceOverview /></Layout></ProtectedRoute>} />
+          <Route path="/attendance/report" element={<ProtectedRoute module="attendance-overview"><Layout><AttendanceReport /></Layout></ProtectedRoute>} />
           <Route path="/portal" element={<ProtectedRoute module="staff-portal"><Layout><MyDashboard /></Layout></ProtectedRoute>} />
           <Route path="/command-dashboard" element={<ProtectedRoute module="command-dashboard"><Layout><CommandDashboard /></Layout></ProtectedRoute>} />
           <Route path="/command-portal" element={<Navigate to="/portal?tab=command" replace />} />

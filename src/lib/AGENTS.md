@@ -1,0 +1,2 @@
+# Attendance reporting
+- Attendance reports read all pages of the invoker-scoped `attendance_report_rows` RPC, exclude deleted personnel and aggregate the full filtered dataset before display pagination; hours use complete nonnegative clock pairs and command groups use current postings — why: no duplicate registers, truncated totals, invented clock-outs or historical posting guesses.
