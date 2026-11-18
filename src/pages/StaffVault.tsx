@@ -67,9 +67,12 @@ export default function StaffVault() {
   const open = async (f: VaultFile, action: "preview" | "download") => {
     const { error } = await supabase.rpc("record_staff_vault_access", { _file_id: f.id, _action: action });
     if (error) return toast.error(error.message);
-    const { data, error: e2 } = await supabase.storage.from("staff-vault").createSignedUrl(f.file_path, 120, action === "download" ? { download: f.file_name } : undefined);
+    // Fetch through the signed-in session (storage access rules apply on every request); no shareable link is issued.
+    const { data, error: e2 } = await supabase.storage.from("staff-vault").download(f.file_path);
     if (e2 || !data) return toast.error("Could not open the document");
-    if (action === "download") triggerDownload(data.signedUrl, f.file_name); else window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    const url = URL.createObjectURL(data);
+    if (action === "download") triggerDownload(url, f.file_name); else window.open(url, "_blank", "noopener,noreferrer");
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
     qc.invalidateQueries({ queryKey: ["staff-vault-log"] });
   };
   const archive = async (f: VaultFile, restore: boolean) => {

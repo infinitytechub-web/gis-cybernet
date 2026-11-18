@@ -1,3 +1,4 @@
+import { csvCell } from "@/lib/csv-safe";
 import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -84,7 +85,7 @@ export default function AuditLogDashboard() {
 
   const exportCsv = () => {
     const header = ["timestamp", "action", "entity_type", "entity_id", "actor_staff_id", "actor_name"];
-    const lines = [header.join(",")];
+    const lines = [header.map(csvCell).join(",")];
     for (const r of filtered) {
       const a = actorMap[r.performed_by] ?? {};
       lines.push([
@@ -93,8 +94,8 @@ export default function AuditLogDashboard() {
         r.entity_type,
         r.entity_id ?? "",
         a.staff_id ?? "",
-        `"${(a.last_name ?? "")} ${(a.first_name ?? "")}"`.trim(),
-      ].join(","));
+        `${a.last_name ?? ""} ${a.first_name ?? ""}`.trim(),
+      ].map(csvCell).join(","));
     }
     const blob = new Blob([lines.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);

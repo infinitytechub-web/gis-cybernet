@@ -781,7 +781,7 @@ export default function GpsAddresses() {
         <div class="cap">Offline coordinate snapshot · No online tiles fetched · ${trackResult.lat.toFixed(6)}, ${trackResult.lng.toFixed(6)}</div>
       </div>
       <table>${rowsHtml}</table>
-      <div class="footer">Ghana Immigration Service · Cybernet · Generated ${captured} · For official use only${opts?.watermarkText ? ` · ${opts.watermarkText}` : ""}</div>
+      <div class="footer">Ghana Immigration Service · Cybernet · Generated ${captured} · For official use only${opts?.watermarkText ? ` · ${opts.watermarkText.replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" })[c] as string)}` : ""}</div>
       </body></html>`;
     const win = openPrintWindow(html, { features: "noopener,noreferrer,width=900,height=720", autoPrint: true, printDelayMs: 500 });
     if (!win) {
