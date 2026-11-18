@@ -59,5 +59,5 @@
 - [x] Menu entry + admin chain-of-command editor
 - [ ] Upload malware scanning — blocked: needs scanner choice (ClamAV service / VirusTotal / Cloudmersive) and key
 
-- [ ] Custody chain: HAWAWU acknowledges TEST-0001, return, confirm report
-- [ ] Command head (OIC/2IC) sign-in for Amasaman to approve armory requests without Super Admin
+- [x] Custody chain: HAWAWU acknowledges TEST-0001, return, confirm report
+- [x] Command head (OIC/2IC) sign-in for Amasaman to approve armory requests without Super Admin
