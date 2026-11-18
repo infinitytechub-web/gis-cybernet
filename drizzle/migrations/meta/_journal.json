@@ -638,6 +638,13 @@
       "when": 1795029137854,
       "tag": "0090_armory_scoped_management_and_live_updates",
       "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1795029969278,
+      "tag": "0091_armory_inspection_approval",
+      "breakpoints": true
     }
   ]
 }

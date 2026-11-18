@@ -58,12 +58,14 @@ export function armoryActions(r: ArmoryRecord, canApprove: boolean, userId: stri
     if (r.kind === "personnel" && r.status === "authorized" && independent) actions = ["suspend"];
   } else if (r.kind === "weapon") {
     actions = [...(independent ? ["verify"] : []), ...(r.status === "in_store" ? ["maintenance"] : r.status === "maintenance" ? ["release"] : [])];
-  } else if (r.kind === "finding" && r.status === "open") actions = ["resolve"];
+  } else if (r.kind === "maintenance" && ["active","pending"].includes(r.status) && independent) actions = ["approve","reject"];
+  else if (r.kind === "finding" && r.status === "open") actions = ["resolve"];
   else if (r.kind === "corrective") actions = r.status === "open" ? ["start","complete"] : r.status === "in_progress" ? ["complete"] : [];
   if (canApprove && ["weapon","facility","maintenance","certification","personnel"].includes(r.kind) && !["issued","reserved"].includes(r.status)) actions.push("archive");
   return actions;
 }
 export function armoryEditable(r: ArmoryRecord) {
+  if (r.kind === "maintenance" && !["active","pending"].includes(r.status)) return false;
   return !["closed","archived"].includes(r.status) && (!["custody","transfer","audit","ammunition","personnel","certification"].includes(r.kind) || ["draft","pending","scheduled"].includes(r.status)) && (!(["custody","transfer"].includes(r.kind)) || r.status === "draft");
 }
 export function armoryTotals(records: ArmoryRecord[]) {
@@ -82,7 +84,7 @@ export type ArmoryReportEntry = { record: ArmoryRecord; unitId: string; month: s
 export type ArmoryMonthRow = { unitId: string; month: string; custody: number; transfer: number; maintenance: number; certification: number; total: number };
 const CUSTODY_ISSUED = ["approved", "acknowledged", "discrepancy", "returned", "closed"];
 const CUSTODY_RETURNED = ["returned", "closed"];
-const INSPECTION_PENDING = ["draft", "pending", "scheduled"];
+const INSPECTION_PENDING = ["draft", "pending", "scheduled", "active"];
 
 /** Date a record belongs to for monthly reporting (ISO yyyy-MM-dd). */
 export function armoryReportDate(r: ArmoryRecord) {
@@ -131,4 +133,18 @@ export function armoryReportTotals(entries: ArmoryReportEntry[], today: string) 
     certExpired: cert.filter(e => { const x = e.record.details.expiry ?? ""; return !!x && x < today; }).length,
     total: entries.length,
   };
+}
+
+export const ARMORY_APPROVAL_KINDS = ["custody", "transfer", "maintenance"] as const;
+/** Records awaiting a Command Head decision: pending custody/transfer, or inspections not yet approved. */
+export function armoryAwaitingApproval(r: ArmoryRecord) {
+  if (r.kind === "custody" || r.kind === "transfer") return r.status === "pending";
+  if (r.kind === "maintenance") return r.status === "active" || r.status === "pending";
+  return false;
+}
+/** Plain-language status shown on each record. */
+export function armoryStatusLabel(r: Pick<ArmoryRecord, "kind" | "status">) {
+  if (armoryAwaitingApproval(r as ArmoryRecord)) return "Awaiting approval";
+  const map: Record<string, string> = { approved: "Approved", rejected: "Rejected", draft: "Draft", cancelled: "Cancelled", acknowledged: "Acknowledged", returned: "Returned", discrepancy: "Discrepancy", handed_over: "Handed over", received: "Received", archived: "Archived" };
+  return map[r.status] ?? r.status.replace(/_/g, " ");
 }

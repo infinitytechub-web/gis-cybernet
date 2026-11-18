@@ -134,6 +134,7 @@ const immigrationItems = [
 
 const securityItems = [
   { title: "Armory & Weapons", url: "/armory-weapons", icon: Crosshair, iconColor: "text-primary" },
+  { title: "Armory Approvals", url: "/armory-weapons/approvals", icon: Crosshair, iconColor: "text-primary" },
   { title: "Armory Report", url: "/armory-weapons/report", icon: Crosshair, iconColor: "text-primary" },
   { title: "Regional Commands", url: "/regional-commands", icon: MapPinned, iconColor: "text-primary" },
   { title: "Command Operations", url: "/command-operations?tab=dashboard", icon: ShieldAlert, iconColor: "text-primary" },

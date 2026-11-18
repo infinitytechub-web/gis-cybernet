@@ -25,3 +25,20 @@ describe("armory monthly report", () => {
     expect([t.certValid, t.certExpiring, t.certExpired]).toEqual([1, 1, 1]);
   });
 });
+import { armoryActions, armoryAwaitingApproval, armoryStatusLabel, armoryEditable } from "@/lib/armory";
+describe("armory approvals", () => {
+  it("lets an independent command head approve an inspection", () => {
+    expect(armoryActions(rec({ kind: "maintenance", status: "active", created_by: "x", updated_by: "x" }), true, "head")).toEqual(expect.arrayContaining(["approve", "reject"]));
+  });
+  it("blocks the creator from approving their own custody request", () => {
+    expect(armoryActions(rec({ status: "pending", created_by: "head", updated_by: "head" }), true, "head")).not.toContain("approve");
+  });
+  it("blocks non-heads from approving", () => {
+    expect(armoryActions(rec({ kind: "transfer", status: "pending", created_by: "x", updated_by: "x" }), false, "y")).not.toContain("approve");
+  });
+  it("labels pending records awaiting approval and locks approved inspections", () => {
+    expect(armoryStatusLabel(rec({ kind: "maintenance", status: "active" }))).toBe("Awaiting approval");
+    expect(armoryAwaitingApproval(rec({ status: "approved" }))).toBe(false);
+    expect(armoryEditable(rec({ kind: "maintenance", status: "approved" }))).toBe(false);
+  });
+});
