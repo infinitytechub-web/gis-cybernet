@@ -52,6 +52,7 @@ export default function ArmoryCommandDashboard() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" asChild><Link to="/armory-weapons"><ArrowLeft className="mr-1 h-4 w-4" />Armory & Weapons</Link></Button>
           <Button variant="outline" size="sm" asChild><Link to="/armory-weapons/report">Armory Report</Link></Button>
+          <Button variant="outline" size="sm" asChild><Link to="/armory-weapons/my">My Armory Portal</Link></Button>
           <Button variant="outline" size="sm" onClick={() => { void ctxQ.refetch(); void recQ.refetch(); }}><RefreshCw className="mr-1 h-4 w-4" />Refresh</Button>
         </div>
       </div>

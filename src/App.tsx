@@ -124,6 +124,7 @@ const ArmoryWeapons = lazy(() => import("./pages/ArmoryWeapons"));
 const ArmoryReport = lazy(() => import("./pages/ArmoryReport"));
 const WeaponLifecycle = lazy(() => import("./pages/WeaponLifecycle"));
 const ArmoryCommandDashboard = lazy(() => import("./pages/ArmoryCommandDashboard"));
+const ArmoryOfficerPortal = lazy(() => import("./pages/ArmoryOfficerPortal"));
 const ArmoryApprovals = lazy(() => import("./pages/ArmoryApprovals"));
 const StaffVault = lazy(() => import("./pages/StaffVault"));
 const RecycleBin = lazy(() => import("./pages/RecycleBin"));
@@ -326,6 +327,7 @@ function App() {
           <Route path="/staff-vault" element={<ProtectedRoute module="staff-vault"><Layout><StaffVault /></Layout></ProtectedRoute>} />
           <Route path="/command-vault" element={<ProtectedRoute module="command-vault"><Layout><CommandVault /></Layout></ProtectedRoute>} />
           <Route path="/armory-weapons" element={<ProtectedRoute module="armory-weapons"><Layout><ArmoryWeapons /></Layout></ProtectedRoute>} />
+          <Route path="/armory-weapons/my" element={<ProtectedRoute module="staff-portal"><Layout><ArmoryOfficerPortal /></Layout></ProtectedRoute>} />
           <Route path="/armory-weapons/dashboard" element={<ProtectedRoute module="armory-weapons"><Layout><ArmoryCommandDashboard /></Layout></ProtectedRoute>} />
           <Route path="/armory-weapons/lifecycle" element={<ProtectedRoute module="armory-weapons"><Layout><WeaponLifecycle /></Layout></ProtectedRoute>} />
           <Route path="/armory-weapons/report" element={<ProtectedRoute module="armory-weapons"><Layout><ArmoryReport /></Layout></ProtectedRoute>} />

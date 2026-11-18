@@ -19652,6 +19652,7 @@ export type Database = {
         Args: { _count: number; _kind: string; _unit: string }
         Returns: undefined
       }
+      armory_my_portal: { Args: never; Returns: Json }
       armory_save: {
         Args: {
           _asset: string
