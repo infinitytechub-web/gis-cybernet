@@ -694,6 +694,13 @@
       "when": 1795031796547,
       "tag": "0098_armory_training_status_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1795032523067,
+      "tag": "0099_armory_transfer_receive_fix",
+      "breakpoints": true
     }
   ]
 }
