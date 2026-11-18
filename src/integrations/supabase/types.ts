@@ -21560,6 +21560,19 @@ export type Database = {
         Args: { _error?: string; _id: string; _ok: boolean; _status: string }
         Returns: string
       }
+      self_attendance_clock: {
+        Args: {
+          _action: string
+          _address?: string
+          _device?: string
+          _ip?: string
+          _lat?: number
+          _lng?: number
+          _notes?: string
+          _token_hash?: string
+        }
+        Returns: Json
+      }
       send_appraisal_reminders: {
         Args: { _period_month?: number; _period_year: number }
         Returns: {

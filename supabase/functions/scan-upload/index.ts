@@ -31,7 +31,8 @@ Deno.serve(async (req) => {
     const t = TARGET[parsed.data.kind];
 
     // Caller must be able to read the row under RLS.
-    const { data: row } = await user.from(t.table).select(`${t.path}`).eq("id", parsed.data.id).maybeSingle();
+    const parentColumn = parsed.data.kind === "document" ? "detention_id" : parsed.data.kind === "surety" ? "bail_id" : "id";
+    const { data: row } = await user.from(t.table).select(`${t.path},${parentColumn}`).eq("id", parsed.data.id).maybeSingle();
     const path = (row as Record<string, string | null> | null)?.[t.path];
     if (!path) return json({ error: "File not found" }, 404);
 
@@ -39,6 +40,15 @@ Deno.serve(async (req) => {
     if (!key) return json({ status: "pending", error: "Virus scanner is not configured" }, 503);
 
     const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    // Mutable record paths are not authority to delete someone else's object.
+    const parent = (row as Record<string, string> | null)?.[parentColumn];
+    const prefix = parsed.data.kind === "surety" ? `bail/${parent}/sureties/` :
+      parsed.data.kind === "document" ? `suspects/${parent}/docs/` : `suspects/${parent}/mugshot-`;
+    const { data: object, error: objectError } = await admin.schema("storage").from("objects")
+      .select("owner_id").eq("bucket_id", "detention-photos").eq("name", path).maybeSingle();
+    if (!parent || !path.startsWith(prefix) || path.includes("..") || objectError || object?.owner_id !== u.user.id) {
+      return json({ error: "Only the uploader can scan this record's file" }, 403);
+    }
     const { data: file, error: dlErr } = await admin.storage.from("detention-photos").download(path);
     if (dlErr || !file) return json({ error: "Could not read file" }, 500);
 
@@ -49,7 +59,9 @@ Deno.serve(async (req) => {
     const verdict = await res.json() as { CleanResult?: boolean; FoundViruses?: { VirusName?: string }[] | null };
     const status = verdict.CleanResult === true ? "safe" : "infected";
 
-    await admin.from(t.table).update({ [t.status]: status }).eq("id", parsed.data.id);
+    const { data: updated, error: updateError } = await admin.from(t.table).update({ [t.status]: status })
+      .eq("id", parsed.data.id).eq(t.path, path).select("id").maybeSingle();
+    if (updateError || !updated) return json({ error: "File changed; retry the scan" }, 409);
     if (status === "infected") {
       await admin.storage.from("detention-photos").remove([path]);
       await admin.from("firewall_events").insert({

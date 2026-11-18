@@ -8,6 +8,7 @@
  * stored HTML, so the paper output always matches the stored data/formatting.
  */
 import { format } from "date-fns";
+import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { genderLabel, relationshipDisplay } from "@/components/detention/detention-options";
 
@@ -124,9 +125,18 @@ export function buildBailPlaceholders(r: BailRecord): Record<string, string> {
 
 /** Replaces `{{token}}` placeholders; unknown tokens render as an em dash. */
 export function renderBailTemplate(template: string, values: Record<string, string>): string {
-  return template.replace(/\{\{\s*([a-z0-9_]+)\s*\}\}/gi, (_m, key: string) =>
+  return sanitizeBailPrintHtml(template.replace(/\{\{\s*([a-z0-9_]+)\s*\}\}/gi, (_m, key: string) =>
     Object.prototype.hasOwnProperty.call(values, key) ? values[key] : "—",
-  );
+  ));
+}
+
+/** Sanitize both new templates and legacy archived printouts before opening. */
+export function sanitizeBailPrintHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    WHOLE_DOCUMENT: true,
+    FORBID_TAGS: ["script", "iframe", "object", "embed", "form", "input", "button", "meta", "link", "base", "svg", "math"],
+    FORBID_ATTR: ["srcdoc"],
+  });
 }
 
 export function wrapBailDocument(body: string, title: string): string {
@@ -190,7 +200,7 @@ export async function prepareBailPrintDocument(
 
   if (!existing.error && existing.data) {
     const row = existing.data as any;
-    return { html: row.rendered_html, version: row.template_version, status, reused: true };
+    return { html: sanitizeBailPrintHtml(row.rendered_html), version: row.template_version, status, reused: true };
   }
 
   const title = `Standard Bail Form — ${record.bailee_first_name ?? ""} ${record.bailee_last_name ?? ""}`.trim();

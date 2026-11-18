@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DIRECTORY_LEVEL_LABELS, DIRECTORY_SCOPE_LABELS, type DirectoryLevel, type DirectoryScope } from "@/hooks/useDirectoryPermissions";
 import { downloadBlob } from "@/lib/download-utils";
+import { csvCellQuoted } from "@/lib/csv-safe";
 import { OfficerLeavePanel } from "@/components/command/OfficerLeavePanel";
 import { OfficerStoresPanel } from "@/components/command/OfficerStoresPanel";
 import { ApprovedLeaveCalendarWidget } from "@/components/leave/ApprovedLeaveCalendarWidget";
@@ -152,7 +153,7 @@ export default function CommandPortal({ embedded = false }: { embedded?: boolean
       o.unit_name ?? "",
     ]);
     const csv = [head, ...rows]
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .map((r) => r.map(csvCellQuoted).join(","))
       .join("\n");
     downloadBlob(
       new Blob([csv], { type: "text/csv;charset=utf-8" }),

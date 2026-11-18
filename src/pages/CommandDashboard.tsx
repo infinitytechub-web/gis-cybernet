@@ -25,6 +25,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { downloadBlob } from "@/lib/download-utils";
+import { csvCellQuoted } from "@/lib/csv-safe";
 import { formatDate, formatDateTime } from "@/lib/date-format";
 import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
 import { SignOffQueue } from "@/components/command/SignOffQueue";
@@ -165,7 +166,7 @@ export default function CommandDashboard() {
         o.last_portal_at ? new Date(o.last_portal_at).toISOString() : "",
       ]),
     ];
-    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = rows.map((r) => r.map(csvCellQuoted).join(",")).join("\n");
     downloadBlob(
       new Blob([csv], { type: "text/csv;charset=utf-8;" }),
       `command-dashboard-${(data?.unit?.name ?? "command").replace(/\s+/g, "-").toLowerCase()}.csv`,

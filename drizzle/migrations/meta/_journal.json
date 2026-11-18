@@ -603,6 +603,13 @@
       "when": 1795025627648,
       "tag": "0085_static_sql_audit_purge_and_restore",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1795026705463,
+      "tag": "0086_secure_self_attendance_clock",
+      "breakpoints": true
     }
   ]
 }

@@ -84,28 +84,17 @@ Deno.serve(async (req) => {
     .filter("details->>staff_id", "ilike", staffId);
 
   if ((recentFailures ?? 0) >= RECOVERY_MAX_ATTEMPTS) {
-    // Lock the matching admin profile (best-effort) and refuse.
-    const { data: lockProfile } = await admin
-      .from("profiles")
-      .select("id")
-      .ilike("staff_id", staffId)
-      .maybeSingle();
-    if (lockProfile?.id) {
-      await admin
-        .from("profiles")
-        .update({ account_locked: true })
-        .eq("id", lockProfile.id)
-        .then(() => {}).catch(() => {});
-    }
+    // Throttle recovery only. An unauthenticated claim must never change
+    // the target's account state or prevent ordinary password sign-in.
     await admin.from("system_audit_log").insert({
       action: "admin_recovery_locked",
       entity_type: "profiles",
-      entity_id: lockProfile?.id ?? null,
+      entity_id: null,
       performed_by: null,
       details: { staff_id: staffId, attempts: recentFailures, window_minutes: RECOVERY_WINDOW_MIN, ip, ua },
     }).then(() => {}).catch(() => {});
     await new Promise((r) => setTimeout(r, 8000));
-    return json(423, { error: "Admin Recovery is locked after 3 failed attempts. Contact a system administrator to unlock this account." });
+    return json(429, { error: "Recovery temporarily unavailable. Try later or use normal sign-in." });
   }
 
   // Look up the profile by staff_id (case-insensitive).

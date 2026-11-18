@@ -35,11 +35,11 @@ export function CheckInOut() {
    * Returns the method actually used so the attendance row matches reality —
    * the same timestamps then feed the weekly dashboard and My daily hours.
    */
-  const verifyBiometric = useCallback(async (): Promise<{ method: "biometric" | "manual"; device: string | null }> => {
+  const verifyBiometric = useCallback(async (): Promise<{ method: "biometric" | "manual"; device: string | null; tokenHash?: string }> => {
     if (!bioReady) return { method: "manual", device: null };
     try {
-      await confirmStepUp("attendance_clock");
-      return { method: "biometric", device: currentDeviceLabel() };
+      const confirmation = await confirmStepUp("attendance_clock");
+      return { method: "biometric", device: currentDeviceLabel(), tokenHash: confirmation.tokenHash };
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "";
       if (msg === "NO_BIOMETRIC") return { method: "manual", device: null };
@@ -167,21 +167,14 @@ export function CheckInOut() {
       let ip: string | null = null;
       try { ip = await getMyClientIp(); } catch { ip = null; }
       const loc = await captureDigitalAddress();
-      const { error } = await supabase.from("attendances").insert({
-        profile_id: profile!.id,
-        date: today,
-        check_in: now,
-        status: "present",
-        notes: notes || null,
-        check_in_method: verified.method,
-        ...(verified.device ? { check_in_device: verified.device } : {}),
-        ...(ip ? { check_in_ip: ip } : {}),
-        ...(loc.lat != null ? { check_in_lat: loc.lat } : {}),
-        ...(loc.lng != null ? { check_in_lng: loc.lng } : {}),
-        ...(loc.address ? { check_in_address: loc.address } : {}),
-      } as any);
+      const { data, error } = await supabase.rpc("self_attendance_clock", {
+        _action: "check_in", _notes: notes || undefined,
+        _token_hash: verified.tokenHash, _device: verified.device ?? undefined,
+        _ip: ip ?? undefined, _lat: loc.lat ?? undefined, _lng: loc.lng ?? undefined,
+        _address: loc.address ?? undefined,
+      });
       if (error) throw error;
-      return { now, method: verified.method };
+      return { now: String((data as Record<string, unknown>).check_in ?? now), method: verified.method };
     },
     onSuccess: ({ now, method }) => {
       queryClient.invalidateQueries({ queryKey: ["my-attendance"] });
@@ -202,21 +195,14 @@ export function CheckInOut() {
       let ip: string | null = null;
       try { ip = await getMyClientIp(); } catch { ip = null; }
       const loc = await captureDigitalAddress();
-      const { error } = await supabase
-        .from("attendances")
-        .update({
-          check_out: now,
-          notes: notes || todayRecord?.notes || null,
-          check_out_method: verified.method,
-          ...(verified.device ? { check_out_device: verified.device } : {}),
-          ...(ip ? { check_out_ip: ip } : {}),
-          ...(loc.lat != null ? { check_out_lat: loc.lat } : {}),
-          ...(loc.lng != null ? { check_out_lng: loc.lng } : {}),
-          ...(loc.address ? { check_out_address: loc.address } : {}),
-        } as any)
-        .eq("id", todayRecord!.id);
+      const { data, error } = await supabase.rpc("self_attendance_clock", {
+        _action: "check_out", _notes: notes || todayRecord?.notes || undefined,
+        _token_hash: verified.tokenHash, _device: verified.device ?? undefined,
+        _ip: ip ?? undefined, _lat: loc.lat ?? undefined, _lng: loc.lng ?? undefined,
+        _address: loc.address ?? undefined,
+      });
       if (error) throw error;
-      return { now, method: verified.method };
+      return { now: String((data as Record<string, unknown>).check_out ?? now), method: verified.method };
     },
     onSuccess: ({ now, method }) => {
       queryClient.invalidateQueries({ queryKey: ["my-attendance"] });
