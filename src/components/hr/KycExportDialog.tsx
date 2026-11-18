@@ -16,6 +16,7 @@ import { downloadBlob } from "@/lib/download-utils";
 import { formatDate } from "@/lib/date-format";
 import { KYC_FIELDS, KYC_GROUPS, buildKycRows, safeName } from "@/lib/hrm-kyc-export";
 import { Switch } from "@/components/ui/switch";
+import { csvCellQuoted } from "@/lib/csv-safe";
 
 type Props = {
   /** Profile IDs in the current view (filtered list or command). */
@@ -97,8 +98,7 @@ export function KycExportDialog({ profileIds, selectedIds = [], scopeLabel }: Pr
 
       let main: { blob: Blob; ext: string };
       if (fmt === "csv") {
-        const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
-        const csv = [headers, ...rows].map((r) => r.map(esc).join(",")).join("\n");
+        const csv = [headers, ...rows].map((r) => r.map(csvCellQuoted).join(",")).join("\n");
         main = { blob: new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }), ext: "csv" };
       } else if (fmt === "xlsx") {
         const wb = XLSX.utils.book_new();

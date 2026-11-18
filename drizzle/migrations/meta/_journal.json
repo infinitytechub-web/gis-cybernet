@@ -722,6 +722,13 @@
       "when": 1795033727319,
       "tag": "0102_secure_requisition_owner_update_and_otp",
       "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1795036984815,
+      "tag": "0103_pin_selected_email_function_search_paths",
+      "breakpoints": true
     }
   ]
 }

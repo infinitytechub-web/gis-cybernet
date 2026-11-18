@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DateInput } from "@/components/ui/date-input";
 import { downloadBlob } from "@/lib/download-utils";
+import { csvCellQuoted } from "@/lib/csv-safe";
 
 const PERIODS = [["day", "Daily"], ["week", "Weekly"], ["month", "Monthly"], ["quarter", "Quarterly"], ["year", "Annually"]] as const;
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -30,7 +31,7 @@ export function AttendanceValidationReport() {
   const exportCsv = () => {
     const head = ["Period", "Command/Unit", "Staff", "Records", "Check-ins", "Check-outs", "Total hours", "Avg hours", "Present", "Late", "Absent", "Excused", "Missing check-out", "Check-out before check-in", "Duplicates"];
     const rows = data.map((r) => [ddmmyyyy(r.period_start), r.unit_name, r.staff_count, r.records, r.checked_in, r.checked_out, r.total_hours, r.avg_hours, r.present, r.late, r.absent, r.excused, r.missing_checkout, r.invalid_times, r.duplicates]);
-    const csv = [head, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = [head, ...rows].map((r) => r.map(csvCellQuoted).join(",")).join("\n");
     downloadBlob(new Blob([csv], { type: "text/csv" }), `attendance-validation-${period}-${from}-${to}.csv`);
   };
   return (
