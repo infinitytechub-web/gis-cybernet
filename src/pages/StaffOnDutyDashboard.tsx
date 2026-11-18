@@ -9,6 +9,7 @@ import { ListPagination } from "@/components/ui/list-pagination";
 import { usePagedList } from "@/hooks/usePagedList";
 import { formatDate } from "@/lib/date-format";
 import { DutyStatusBadge, dutyStateOf } from "@/components/shared/DutyStatusBadge";
+import { OnDutyClockPanel } from "@/components/command/OnDutyClockPanel";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 
 const db = supabase as any;
@@ -82,6 +83,8 @@ export default function StaffOnDutyDashboard() {
         </div>
         <Button variant="outline" size="sm" onClick={() => { void att.refetch(); void leave.refetch(); }}><RefreshCw className="mr-1 h-4 w-4" />Refresh</Button>
       </div>
+      <OnDutyClockPanel />
+
       {(att.isError || leave.isError) && <p role="alert" className="text-destructive">Duty figures could not be loaded.</p>}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

@@ -97,6 +97,8 @@ export function useRosterClock() {
       qc.invalidateQueries({ queryKey: ["my-attendance"] });
       qc.invalidateQueries({ queryKey: ["attendance"] });
       qc.invalidateQueries({ queryKey: ["unit-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["on-duty-month"] });
+      qc.invalidateQueries({ queryKey: ["today-duty"] });
 
       const who = vars.name ? `${vars.name}: ` : "";
       const time = (res.action === "check_in" ? res.check_in : res.check_out) ?? null;
