@@ -1,16 +1,82 @@
 {
   "source": "ARMOURY360-PWA.zip",
   "capabilities": [
-    {"capability":"code","source":"single bundled React HTML demo","outcome":"recreate as integrated Armory & Weapons module","status":"in_progress","next_action":"implement registers and workflow controls"},
-    {"capability":"schema","source":"browser-only demo state","outcome":"migrate to additive Lovable Cloud tables","status":"in_progress","next_action":"apply authorized atomic workflows"},
-    {"capability":"records","source":"generated demonstration fixtures","outcome":"exclude fabricated records; use existing staff and commands","status":"accepted","next_action":null},
-    {"capability":"auth identities","source":"demo credentials","outcome":"exclude; retain existing Cybernet authentication","status":"accepted","next_action":null},
-    {"capability":"authorization","source":"client-only demo checks","outcome":"replace with existing roles, exact module grants and command-scoped server checks","status":"in_progress","next_action":"verify denial and scope"},
-    {"capability":"uploaded file bytes","source":"metadata-only demo documents","outcome":"reuse secure Command Vault for real file storage and audit","status":"in_progress","next_action":"integrate existing file workspace"},
-    {"capability":"external providers, callbacks, webhooks and schedules","source":"none detected in application call sites","outcome":"none to migrate","status":"accepted","next_action":null},
-    {"capability":"secrets","source":"demo credentials only","outcome":"exclude all demo credentials","status":"accepted","next_action":null},
-    {"capability":"branding, login and installability","source":"standalone demo logo, theme, login and manifest","outcome":"exclude; preserve Cybernet shell and login; no separate app or offline cache","status":"accepted","next_action":null},
-    {"capability":"cutover","source":"new module in existing system","outcome":"preview integration, publication only after verification","status":"pending","next_action":"complete testing before publication"},
-    {"capability":"verification","source":"integrated module","outcome":"functional, security, regression and responsive checks","status":"pending","next_action":"run tests and authenticated checks where available"}
+    {
+      "capability": "code",
+      "source": "single bundled React HTML demo",
+      "outcome": "Integrated all eleven register areas, dashboard, filtered reports, workflow controls, activity and categorized Command Vault navigation",
+      "status": "implemented",
+      "next_action": "Authorized responsive and saved workflow acceptance; complete remaining demo-specific notification read states and document version/retention controls"
+    },
+    {
+      "capability": "schema",
+      "source": "browser-only demo state",
+      "outcome": "migrate to additive Lovable Cloud tables",
+      "status": "implemented",
+      "next_action": "Verify authorized create/read/update workflows with an approved manager account"
+    },
+    {
+      "capability": "records",
+      "source": "generated demonstration fixtures",
+      "outcome": "exclude fabricated records; use existing staff and commands",
+      "status": "accepted",
+      "next_action": null
+    },
+    {
+      "capability": "auth identities",
+      "source": "demo credentials",
+      "outcome": "exclude; retain existing Cybernet authentication",
+      "status": "accepted",
+      "next_action": null
+    },
+    {
+      "capability": "authorization",
+      "source": "client-only demo checks",
+      "outcome": "replace with existing roles, exact module grants and command-scoped server checks",
+      "status": "partially_verified",
+      "next_action": "GIS-ASC-SO001 correctly denied in UI and API; user requested restrictions unchanged. Verify allowed-manager and independent approver paths with approved accounts"
+    },
+    {
+      "capability": "uploaded file bytes",
+      "source": "metadata-only demo documents",
+      "outcome": "reuse secure Command Vault for real file storage and audit",
+      "status": "implemented",
+      "next_action": "Verify real authorized upload/download/archive and armory-specific retention/version requirements"
+    },
+    {
+      "capability": "external providers, callbacks, webhooks and schedules",
+      "source": "none detected in application call sites",
+      "outcome": "none to migrate",
+      "status": "accepted",
+      "next_action": null
+    },
+    {
+      "capability": "secrets",
+      "source": "demo credentials only",
+      "outcome": "exclude all demo credentials",
+      "status": "accepted",
+      "next_action": null
+    },
+    {
+      "capability": "branding, login and installability",
+      "source": "standalone demo logo, theme, login and manifest",
+      "outcome": "exclude; preserve Cybernet shell and login; no separate app or offline cache",
+      "status": "accepted",
+      "next_action": null
+    },
+    {
+      "capability": "cutover",
+      "source": "new module in existing system",
+      "outcome": "preview integration, publication only after verification",
+      "status": "pending",
+      "next_action": "complete testing before publication"
+    },
+    {
+      "capability": "verification",
+      "source": "integrated module",
+      "outcome": "functional, security, regression and responsive checks",
+      "status": "partially_verified",
+      "next_action": "15 armory tests passed; 962/963 existing regression tests passed (pre-existing Command Operations empty-attendance text assertion fails). Public responsive routes and signed-in staff denial verified; authorized writes/approvals remain pending"
+    }
   ]
 }

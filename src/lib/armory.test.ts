@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { armoryActions, armoryTotals, armoryAlerts, armoryEditable, armoryFormSchema, type ArmoryRecord } from "./armory";
+import { armoryActions, armoryTotals, armoryAlerts, armoryEditable, armoryFormSchema, armoryReportRows, type ArmoryRecord } from "./armory";
 const row = (overrides: Partial<ArmoryRecord> = {}): ArmoryRecord => ({id:"r",kind:"custody",org_unit_id:"c",reference:"R",title:"Record",profile_id:"p",asset_id:"w",parent_id:null,destination_unit_id:null,status:"pending",details:{},created_by:"creator",updated_by:"creator",created_at:"2026-11-18",updated_at:"2026-11-18",version:1,...overrides});
 describe("integrated Armory & Weapons safeguards",()=>{
   it("prevents a creator approving their own custody request",()=>expect(armoryActions(row(),true,"creator")).not.toContain("approve"));
@@ -12,4 +12,7 @@ describe("integrated Armory & Weapons safeguards",()=>{
   it("totals count real active weapons and independently verified ammunition only",()=>expect(armoryTotals([row({kind:"weapon",status:"in_store"}),row({kind:"weapon",status:"archived"}),row({kind:"ammunition",status:"pending",details:{quantity:"10"}}),row({kind:"ammunition",status:"verified",details:{quantity:"20"}})])).toMatchObject({weapons:1,inStore:1,ammunition:20}));
   it("flags expiry and overdue review based on current dates",()=>expect(armoryAlerts([row({kind:"certification",status:"verified",details:{expiry:"2026-11-17"}}),row({kind:"maintenance",status:"active",details:{next_review:"2026-11-19"}})],"2026-11-18")).toHaveLength(1));
   it("requires a traceable reason",()=>expect(armoryFormSchema.safeParse({reference:"R",title:"Weapon",reason:""}).success).toBe(false));
+  it("locks submitted custody details",()=>expect(armoryEditable(row({status:"pending"}))).toBe(false));
+  it("reports only selected register records",()=>expect(armoryReportRows([row({kind:"weapon"}),row({kind:"ammunition"})],"weapon","2026-11-18")).toEqual([row({kind:"weapon"})]));
+  it("pending report excludes finalized requests",()=>expect(armoryReportRows([row(),row({status:"returned"})],"pending","2026-11-18")).toEqual([row()]));
 });

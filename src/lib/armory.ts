@@ -21,6 +21,11 @@ export const armoryFormSchema = z.object({
   reference: z.string().trim().min(1).max(100), title: z.string().trim().min(1).max(200),
   reason: z.string().trim().min(3, "Enter a reason of at least 3 characters").max(1000),
 });
+export function armoryReportRows(records: ArmoryRecord[], kind: string, today: string) {
+  if (kind === "exceptions") return armoryAlerts(records, today);
+  if (kind === "pending") return records.filter(r => r.status === "pending");
+  return kind === "all" ? records : records.filter(r => r.kind === kind);
+}
 export type ArmoryField = { key: string; label: string; type?: "date" | "number"; required?: boolean; options?: string[] };
 export const ARMORY_FIELDS: Record<ArmoryKind, ArmoryField[]> = {
   weapon: [{key:"serial",label:"Serial number",required:true},{key:"registration",label:"Registration reference",required:true},{key:"classification",label:"Classification"},{key:"manufacturer",label:"Manufacturer"},{key:"model",label:"Model"},{key:"acquisition_date",label:"Acquisition date",type:"date"},{key:"source",label:"Acquisition source"},{key:"facility",label:"Storage facility reference"},{key:"document",label:"Acquisition document reference"}],
