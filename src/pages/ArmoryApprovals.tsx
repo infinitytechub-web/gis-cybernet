@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { ArrowLeft, CheckCircle2, XCircle, RefreshCw, ClipboardCheck, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { ArmoryNav } from "@/components/armory/ArmoryNav";
+import { ArmoryHomeShortcut } from "@/components/armory/ArmoryHomeShortcut";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useStaffIdDisplay } from "@/hooks/useStaffIdDisplay";
@@ -85,6 +86,7 @@ export default function ArmoryApprovals() {
         </div>
       </div>
       <ArmoryNav />
+      <ArmoryHomeShortcut />
       {ctxQ.isSuccess && !ctx.commands.length ? <Card><CardContent className="p-6 text-sm text-muted-foreground">You have no armory access for any command.</CardContent></Card> : <>
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {(["custody", "transfer", "maintenance"] as const).map(k => <Card key={k}><CardContent className="p-4"><p className="text-xs text-muted-foreground sm:text-sm">{KIND[k]} awaiting approval</p><p className="text-2xl font-bold">{recQ.isLoading ? "…" : counts[k]}</p></CardContent></Card>)}

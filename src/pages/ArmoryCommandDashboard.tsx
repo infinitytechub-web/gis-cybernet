@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ArrowLeft, RefreshCw, LayoutDashboard, ClipboardCheck, Wrench, Award, Crosshair } from "lucide-react";
 import { ArmoryNav } from "@/components/armory/ArmoryNav";
+import { ArmoryHomeShortcut } from "@/components/armory/ArmoryHomeShortcut";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -55,6 +56,7 @@ export default function ArmoryCommandDashboard() {
         </div>
       </div>
       <ArmoryNav />
+      <ArmoryHomeShortcut />
       {ctxQ.isError || recQ.isError ? <p className="text-sm text-destructive">Armory data could not be loaded. Try Refresh.</p> : null}
       {ctxQ.isSuccess && !ctx.commands.length ? <Card><CardContent className="p-6 text-sm text-muted-foreground">You have no armory access for any command.</CardContent></Card> : <>
         <Card><CardContent className="grid gap-3 p-4 sm:grid-cols-2">
