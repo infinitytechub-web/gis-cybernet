@@ -673,6 +673,13 @@
       "when": 1795030905758,
       "tag": "0095_armory_full_lifecycle",
       "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1795031422660,
+      "tag": "0096_armory_recipient_acknowledge_fix",
+      "breakpoints": true
     }
   ]
 }
