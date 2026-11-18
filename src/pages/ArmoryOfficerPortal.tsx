@@ -39,7 +39,8 @@ export default function ArmoryOfficerPortal() {
           <h1 className="text-2xl font-bold">My Armory Portal</h1>
           <p className="text-sm text-muted-foreground">Your issued weapons, upcoming inspections and profile.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" asChild><Link to="/armory-weapons/my-training">My training</Link></Button>
           <Button variant="outline" size="sm" onClick={() => q.refetch()} disabled={q.isFetching}><RefreshCw className="mr-1 h-4 w-4" />Refresh</Button>
         </div>
       </div>

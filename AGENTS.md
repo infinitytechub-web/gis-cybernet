@@ -42,3 +42,4 @@
 - `admin` = global Super Admin: `user_org_scope` returns all units for it — why: authority must not depend on posting.
 
 - Function security: `supabase/functions/AGENTS.md`.
+- Officer self-service training submissions use armory_submit_my_training (own profile/command, pending only, one open at a time) and require independent head verification — why: officers record training without gaining armory management rights.

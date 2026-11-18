@@ -701,6 +701,20 @@
       "when": 1795032523067,
       "tag": "0099_armory_transfer_receive_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1795032991443,
+      "tag": "0100_armory_self_training_submission",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1795033195824,
+      "tag": "0101_armory_self_training_text_values",
+      "breakpoints": true
     }
   ]
 }

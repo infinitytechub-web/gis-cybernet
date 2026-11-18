@@ -19653,6 +19653,7 @@ export type Database = {
         Returns: undefined
       }
       armory_my_portal: { Args: never; Returns: Json }
+      armory_my_training: { Args: never; Returns: Json }
       armory_save: {
         Args: {
           _asset: string
@@ -19667,6 +19668,19 @@ export type Database = {
           _title: string
           _unit: string
           _version?: number
+        }
+        Returns: string
+      }
+      armory_submit_my_training: {
+        Args: {
+          _document: string
+          _expiry: string
+          _issued: string
+          _location: string
+          _provider: string
+          _reason: string
+          _training_month: string
+          _training_status: string
         }
         Returns: string
       }
