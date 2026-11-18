@@ -589,6 +589,20 @@
       "when": 1795025421519,
       "tag": "0083_admin_set_staff_id",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1795025560524,
+      "tag": "0084_static_sql_recycle_and_purge",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1795025627648,
+      "tag": "0085_static_sql_audit_purge_and_restore",
+      "breakpoints": true
     }
   ]
 }
