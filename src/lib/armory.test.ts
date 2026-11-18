@@ -16,3 +16,12 @@ describe("integrated Armory & Weapons safeguards",()=>{
   it("reports only selected register records",()=>expect(armoryReportRows([row({kind:"weapon"}),row({kind:"ammunition"})],"weapon","2026-11-18")).toEqual([row({kind:"weapon"})]));
   it("pending report excludes finalized requests",()=>expect(armoryReportRows([row(),row({status:"returned"})],"pending","2026-11-18")).toEqual([row()]));
 });
+import { weaponNextInspection, addMonthsIso, armoryCommandDashboard } from "./armory";
+describe("automatic inspection schedule", () => {
+  const w = { id: "w1", kind: "weapon", status: "in_store", org_unit_id: "u", created_at: "2026-01-10T00:00:00Z", details: {} } as never;
+  it("is due 3 months after registration when never inspected", () => expect(weaponNextInspection(w, [])).toBe("2026-04-10"));
+  it("is due 3 months after the last inspection without a next review", () => expect(weaponNextInspection(w, [{ id: "i", kind: "maintenance", status: "approved", asset_id: "w1", org_unit_id: "u", created_at: "x", details: { date: "2026-11-30" } } as never])).toBe("2027-02-28"));
+  it("uses the inspection's own next review when set", () => expect(weaponNextInspection(w, [{ id: "i", kind: "maintenance", status: "approved", asset_id: "w1", org_unit_id: "u", created_at: "x", details: { date: "2026-02-01", next_review: "2026-03-01" } } as never])).toBe("2026-03-01"));
+  it("counts overdue weapons on the dashboard by date alone", () => expect(armoryCommandDashboard([w], "u", "2026-04-11").inspections.overdue).toBe(1));
+  it("clamps month ends", () => expect(addMonthsIso("2026-08-31", 3)).toBe("2026-11-30"));
+});

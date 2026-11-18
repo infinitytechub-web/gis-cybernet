@@ -159,6 +159,22 @@ export type WeaponServiceSummary = {
   inspections: number; inspectionsApproved: number; lastInspection: string | null; nextReview: string | null; reviewOverdue: boolean;
 };
 const CLOSED_CUSTODY = ["returned", "rejected", "cancelled", "archived"];
+/** Inspection cycle used when an inspection has no explicit next review. */
+export const INSPECTION_INTERVAL_MONTHS = 3;
+export function addMonthsIso(iso: string, months: number): string {
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  const t = new Date(Date.UTC(y, m - 1 + months, 1));
+  const last = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 0)).getUTCDate();
+  t.setUTCDate(Math.min(d, last));
+  return t.toISOString().slice(0, 10);
+}
+/** Next inspection due for a weapon: latest inspection's next review (or its date + cycle); never-inspected weapons fall due one cycle after registration. */
+export function weaponNextInspection(weapon: ArmoryRecord, records: ArmoryRecord[]): string {
+  const insp = records.filter(r => r.kind === "maintenance" && r.asset_id === weapon.id && !["rejected", "archived", "cancelled"].includes(r.status) && r.details.date);
+  const last = insp.map(r => r.details.date as string).sort().pop();
+  if (!last) return addMonthsIso(weapon.created_at.slice(0, 10), INSPECTION_INTERVAL_MONTHS);
+  return insp.filter(r => r.details.date === last).map(r => r.details.next_review).filter(Boolean).sort().pop() ?? addMonthsIso(last, INSPECTION_INTERVAL_MONTHS);
+}
 /** Every custody, transfer and inspection record that references this weapon, oldest first. */
 export function weaponLifecycle(records: ArmoryRecord[], weaponId: string): WeaponLifecycleEntry[] {
   return records
@@ -171,7 +187,7 @@ export function weaponServiceSummary(entries: WeaponLifecycleEntry[], today: str
   const transfers = entries.filter(e => e.kind === "transfer" && e.record.status !== "archived");
   const insp = entries.filter(e => e.kind === "maintenance" && !["rejected", "archived"].includes(e.record.status));
   const last = insp.map(e => e.record.details.date).filter(Boolean).sort().pop() ?? null;
-  const next = insp.filter(e => e.record.details.date === last).map(e => e.record.details.next_review).filter(Boolean).sort().pop() ?? null;
+  const next = insp.filter(e => e.record.details.date === last).map(e => e.record.details.next_review).filter(Boolean).sort().pop() ?? (last ? addMonthsIso(last, INSPECTION_INTERVAL_MONTHS) : null);
   return {
     custodyIssues: custody.filter(e => !["draft", "rejected", "cancelled"].includes(e.record.status)).length,
     custodyOpen: custody.filter(e => !CLOSED_CUSTODY.includes(e.record.status) && e.record.status !== "draft").length,
@@ -206,7 +222,8 @@ export function armoryCommandDashboard(records: ArmoryRecord[], unitId: string, 
     pending,
     pendingByKind: { custody: pending.filter(r => r.kind === "custody").length, transfer: pending.filter(r => r.kind === "transfer").length, maintenance: pending.filter(r => r.kind === "maintenance").length, other: pending.filter(r => !["custody", "transfer", "maintenance"].includes(r.kind)).length },
     inspections: { scheduled: insp.filter(r => r.status === "active").length, inProgress: insp.filter(r => r.status === "in_progress").length, awaiting: insp.filter(r => r.status === "pending").length, approved: insp.filter(r => r.status === "approved").length,
-      overdue: insp.filter(r => r.status === "approved" && !!r.details.next_review && r.details.next_review < today).length },
+      overdue: weapons.filter(w => w.details.condition !== "Condemned" && weaponNextInspection(w, mine) < today).length,
+      dueSoon: weapons.filter(w => { if (w.details.condition === "Condemned") return false; const n = weaponNextInspection(w, mine); return n >= today && n <= soonIso; }).length },
     certifications: { pending: certs.filter(r => r.status === "pending").length, valid: certs.filter(r => r.status === "verified" && (r.details.expiry ?? "") > soonIso).length,
       expiring: certs.filter(r => { const x = r.details.expiry ?? ""; return x >= today && x <= soonIso; }).length, expired: certs.filter(r => { const x = r.details.expiry ?? ""; return !!x && x < today; }).length },
     weaponsByCondition: [...WEAPON_CONDITIONS, "Not set"].map(c => ({ condition: c, count: weapons.filter(w => (w.details.condition || "Not set") === c).length })),

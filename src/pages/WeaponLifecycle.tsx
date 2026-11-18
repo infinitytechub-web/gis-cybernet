@@ -16,7 +16,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PagedSection } from "@/components/ui/paged-section";
 import { buildCsv } from "@/lib/csv-safe";
 import { downloadCSVString } from "@/lib/download-utils";
-import { weaponLifecycle, weaponServiceSummary, type ArmoryContext, type ArmoryRecord } from "@/lib/armory";
+import { weaponLifecycle, weaponServiceSummary, weaponNextInspection, type ArmoryContext, type ArmoryRecord } from "@/lib/armory";
 
 const KIND: Record<string, string> = { custody: "Custody", transfer: "Transfer", maintenance: "Inspection" };
 const d = (s?: string | null) => { if (!s) return "—"; const x = new Date(s.length === 10 ? `${s}T00:00:00` : s); return Number.isNaN(x.getTime()) ? s : format(x, "dd/MM/yyyy"); };
@@ -41,7 +41,9 @@ export default function WeaponLifecycle() {
   const today = format(new Date(), "yyyy-MM-dd");
   const history = useMemo(() => weaponLifecycle(records, weaponId), [records, weaponId]);
   const shown = history.filter(e => kind === "all" || e.kind === kind);
-  const summary = weaponServiceSummary(history, today);
+  const baseSummary = weaponServiceSummary(history, today);
+  const autoNext = weapon ? weaponNextInspection(weapon, records) : baseSummary.nextReview;
+  const summary = { ...baseSummary, nextReview: autoNext, reviewOverdue: !!autoNext && autoNext < today };
   const cmd = (id: string | null) => ctx.commands.find(c => c.id === id)?.name ?? (id ? "Other command" : "—");
   const staff = (id: string | null, exp = false) => { const p = ctx.staff.find(s => s.id === id); return p ? `${p.first_name} ${p.last_name} · ${formatStaffId(p.staff_id, { ownerUserId: p.user_id, context: exp ? "export" : "directory" })}` : "—"; };
   const detailText = (r: ArmoryRecord) => r.kind === "custody" ? `Issued to ${staff(r.profile_id)}${r.details.purpose ? ` · ${r.details.purpose}` : ""}`
