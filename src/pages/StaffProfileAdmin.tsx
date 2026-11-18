@@ -1,3 +1,4 @@
+import { ArmoryAccessToggle } from "@/components/admin/ArmoryAccessToggle";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,6 +91,7 @@ export default function StaffProfileAdmin() {
               </SelectContent></Select>{ctx.isError && <p className="text-xs text-destructive">Command options could not be loaded.</p>}</div>
               <div><Label htmlFor="spa-reason">Reason</Label><Textarea id="spa-reason" value={reason} onChange={(e) => setReason(e.target.value)} /></div>
               <Button onClick={save} disabled={busy}>{busy ? "Saving…" : "Save changes"}</Button>
+              <ArmoryAccessToggle key={picked.id} profileId={picked.id} />
             </>}
           </CardContent></Card>
       </div>

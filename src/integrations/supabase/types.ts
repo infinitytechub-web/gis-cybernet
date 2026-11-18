@@ -19633,6 +19633,7 @@ export type Database = {
           recipient_type: string
         }[]
       }
+      armory_access_state: { Args: { _profile_id: string }; Returns: Json }
       armory_adjust_ammunition: {
         Args: {
           _id: string
@@ -21797,6 +21798,10 @@ export type Database = {
       session_heartbeat: {
         Args: { _page?: string; _session_key: string }
         Returns: boolean
+      }
+      set_armory_access: {
+        Args: { _grant: boolean; _profile_id: string; _reason: string }
+        Returns: undefined
       }
       set_audit_purge_grant: {
         Args: { _grant: boolean; _user_id: string }
