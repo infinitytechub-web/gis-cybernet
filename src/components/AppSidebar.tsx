@@ -97,6 +97,7 @@ const leaveItems = [
   { title: "Leave / Pass Requests", url: "/leave", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400" },
   { title: "Leave Calendar", url: "/leave/calendar", icon: CalendarDays, iconColor: "text-cyan-700 dark:text-cyan-300" },
   { title: "Leave Approvals", url: "/leave/approvals", icon: ClipboardCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
+  { title: "Command Leave Dashboard", url: "/hr/leave-dashboard", icon: BarChart3, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Holidays", url: "/holidays", icon: Calendar, iconColor: "text-rose-600 dark:text-rose-400" },
 ];
 

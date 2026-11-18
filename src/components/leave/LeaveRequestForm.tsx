@@ -14,6 +14,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { SecureAttachmentField } from "@/components/shared/SecureAttachmentField";
 import { DateInput } from "@/components/ui/date-input";
 import { refreshLeaveDashboards } from "@/lib/leave-workflow";
+import { reasonsFor, validateLeaveReason } from "@/lib/leave-reasons";
 
 type LeaveType = Database["public"]["Enums"]["leave_type"];
 
@@ -38,6 +39,7 @@ export function LeaveRequestForm() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
+  const [reasonCategory, setReasonCategory] = useState("");
   const [attachmentPath, setAttachmentPath] = useState<string | null>(null);
   const [duration, setDuration] = useState<string>("");
 
@@ -129,6 +131,8 @@ export function LeaveRequestForm() {
       if (!profile) throw new Error("Profile not found");
       if (!startDate || !endDate) throw new Error("Please select dates");
       if (new Date(endDate) < new Date(startDate)) throw new Error("End date must be after start date");
+      const reasonError = validateLeaveReason(type, reasonCategory, reason);
+      if (reasonError) throw new Error(reasonError);
 
       const { error } = await supabase.from("leave_requests").insert({
         profile_id: profile.id,
@@ -136,6 +140,7 @@ export function LeaveRequestForm() {
         start_date: startDate,
         end_date: endDate,
         reason: reason || null,
+        reason_category: reasonCategory,
         attachment_path: attachmentPath,
       });
       if (error) throw error;
@@ -145,6 +150,7 @@ export function LeaveRequestForm() {
       setStartDate("");
       setEndDate("");
       setReason("");
+      setReasonCategory("");
       setAttachmentPath(null);
       setDuration("");
       toast.success("Leave request submitted successfully");
@@ -170,6 +176,7 @@ export function LeaveRequestForm() {
             onValueChange={(v) => {
               setType(v as LeaveType);
               setDuration("");
+              setReasonCategory("");
             }}
           >
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -217,9 +224,19 @@ export function LeaveRequestForm() {
           </div>
         </div>
         <div>
-          <Label>Reason</Label>
+          <Label htmlFor="leave-reason-category">Reason</Label>
+          <Select value={reasonCategory} onValueChange={setReasonCategory}>
+            <SelectTrigger id="leave-reason-category"><SelectValue placeholder="Choose a reason" /></SelectTrigger>
+            <SelectContent>
+              {reasonsFor(type).map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="leave-reason-details">Details{reasonCategory === "Other" ? " (required)" : " (optional)"}</Label>
           <Textarea
-            placeholder="Briefly describe the reason..."
+            id="leave-reason-details"
+            placeholder={type === "sick" ? "Do not include medical details" : "Briefly describe the reason..."}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
@@ -229,7 +246,7 @@ export function LeaveRequestForm() {
         
         <Button
           onClick={() => mutation.mutate()}
-          disabled={mutation.isPending || !profile || profileError || !startDate || !endDate}
+          disabled={mutation.isPending || !profile || profileError || !startDate || !endDate || !reasonCategory}
           className="w-full gap-2"
         >
           <Send className="h-4 w-4" />

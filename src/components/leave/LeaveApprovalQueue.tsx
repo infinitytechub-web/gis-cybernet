@@ -339,6 +339,10 @@ export function LeaveApprovalQueue() {
                   )}
                 </div>
               </div>
+              <div className="text-sm">
+                <span className="text-muted-foreground">Leave type and reason:</span>
+                <p className="mt-1 font-medium capitalize">{selectedRequest.type} leave · {selectedRequest.reason_category ?? "Not specified"}</p>
+              </div>
               {selectedRequest.reason && (
                 <div className="text-sm">
                   <span className="text-muted-foreground">Reason:</span>

@@ -7367,6 +7367,7 @@ export type Database = {
           id: string
           profile_id: string
           reason: string | null
+          reason_category: string | null
           shift_group: string | null
           start_date: string
           status: Database["public"]["Enums"]["leave_status"]
@@ -7384,6 +7385,7 @@ export type Database = {
           id?: string
           profile_id: string
           reason?: string | null
+          reason_category?: string | null
           shift_group?: string | null
           start_date: string
           status?: Database["public"]["Enums"]["leave_status"]
@@ -7401,6 +7403,7 @@ export type Database = {
           id?: string
           profile_id?: string
           reason?: string | null
+          reason_category?: string | null
           shift_group?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["leave_status"]
@@ -19790,6 +19793,17 @@ export type Database = {
           name: string
           officer_count: number
           type: string
+        }[]
+      }
+      command_leave_dashboard: {
+        Args: { p_from: string; p_org_unit?: string; p_to: string }
+        Returns: {
+          approved: number
+          approved_days: number
+          command_name: string
+          org_unit_id: string
+          pending: number
+          rejected: number
         }[]
       }
       command_move_officers: {

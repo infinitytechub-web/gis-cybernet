@@ -9,6 +9,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { reasonsFor, validateLeaveReason } from "@/lib/leave-reasons";
 
 const LEAVE_TYPES = ["annual", "sick", "compassionate", "pass", "study", "maternity"] as const;
 
@@ -30,6 +31,7 @@ export function LeaveEditDialog({ request, onClose }: Props) {
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
   const [comments, setComments] = useState("");
+  const [reasonCategory, setReasonCategory] = useState("");
 
   useEffect(() => {
     if (!request) return;
@@ -37,6 +39,7 @@ export function LeaveEditDialog({ request, onClose }: Props) {
     setStartDate(request.start_date ?? "");
     setEndDate(request.end_date ?? "");
     setReason(request.reason ?? "");
+    setReasonCategory(request.reason_category ?? "");
     setComments(request.comments ?? "");
   }, [request]);
 
@@ -45,6 +48,7 @@ export function LeaveEditDialog({ request, onClose }: Props) {
       if (!request) return;
       if (!startDate || !endDate) throw new Error("Start and end dates are required.");
       if (new Date(endDate) < new Date(startDate)) throw new Error("End date cannot be before the start date.");
+      if (reasonCategory) { const err = validateLeaveReason(type, reasonCategory, reason); if (err) throw new Error(err); }
       const { error } = await supabase
         .from("leave_requests")
         .update({
@@ -52,6 +56,7 @@ export function LeaveEditDialog({ request, onClose }: Props) {
           start_date: startDate,
           end_date: endDate,
           reason: reason || null,
+          reason_category: reasonCategory || null,
           comments: comments || null,
         })
         .eq("id", request.id);
@@ -104,7 +109,12 @@ export function LeaveEditDialog({ request, onClose }: Props) {
               </div>
             </div>
             <div>
-              <Label htmlFor="leave-edit-reason">Reason</Label>
+              <Label>Reason</Label>
+              <Select value={reasonCategory} onValueChange={setReasonCategory}>
+                <SelectTrigger aria-label="Reason"><SelectValue placeholder="Choose a reason" /></SelectTrigger>
+                <SelectContent>{reasonsFor(type).map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+              </Select>
+              <Label htmlFor="leave-edit-reason">Details</Label>
               <Textarea id="leave-edit-reason" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />
             </div>
             <div>
