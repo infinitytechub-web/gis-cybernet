@@ -270,6 +270,9 @@ export default function MyDashboard() {
             <Button asChild variant="secondary" size="sm">
               <Link to="/my-portal">My letters</Link>
             </Button>
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/armory-weapons/my">My weapons</Link>
+            </Button>
           </div>
         }
       />
