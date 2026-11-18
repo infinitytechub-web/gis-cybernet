@@ -1,3 +1,4 @@
+import { VaultStaffOnLeave } from "@/components/command/VaultStaffOnLeave";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -580,6 +581,7 @@ export default function CommandVault() {
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="documents"><FileText className="mr-1 h-4 w-4" />Documents</TabsTrigger>
           <TabsTrigger value="activity"><History className="mr-1 h-4 w-4" />Vault log</TabsTrigger>
+          <TabsTrigger value="on-leave">Staff On Leave</TabsTrigger>
         </TabsList>
         <TabsContent value="documents">
       <Card>
@@ -712,6 +714,9 @@ export default function CommandVault() {
         </TabsContent>
         <TabsContent value="activity">
           {selectedCommand && <CommandVaultLog orgUnitId={selectedCommand} commandName={(commands as any[]).find((c: any) => c.id === selectedCommand)?.name} />}
+        </TabsContent>
+        <TabsContent value="on-leave">
+          {selectedCommand && <VaultStaffOnLeave orgUnitId={selectedCommand} />}
         </TabsContent>
       </Tabs>
 
