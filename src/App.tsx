@@ -53,6 +53,7 @@ const CommandAnalytics = lazy(() => import("./pages/CommandAnalytics"));
 const HrHub = lazy(() => import("./pages/HrHub"));
 const AdminOverview = lazy(() => import("./pages/AdminOverview"));
 const CommandWorkforceDashboard = lazy(() => import("./pages/CommandWorkforceDashboard"));
+const StaffProfileAdmin = lazy(() => import("./pages/StaffProfileAdmin"));
 const StaffOnDutyDashboard = lazy(() => import("./pages/StaffOnDutyDashboard"));
 const StaffTier = lazy(() => import("./pages/StaffTier"));
 const CreateStaffAccount = lazy(() => import("./pages/CreateStaffAccount"));
@@ -333,6 +334,7 @@ function App() {
           <Route path="/hr" element={<ProtectedRoute module="hr"><Layout><HrHub /></Layout></ProtectedRoute>} />
           <Route path="/hr/overview" element={<ProtectedRoute module="hr"><Layout><AdminOverview /></Layout></ProtectedRoute>} />
           <Route path="/hr/leave-dashboard" element={<ProtectedRoute module="leave-approvals"><Layout><CommandLeaveDashboard /></Layout></ProtectedRoute>} />
+          <Route path="/hr/staff-profile" element={<ProtectedRoute module="hr"><Layout><StaffProfileAdmin /></Layout></ProtectedRoute>} />
           <Route path="/hr/on-duty" element={<ProtectedRoute module="hr"><Layout><StaffOnDutyDashboard /></Layout></ProtectedRoute>} />
           <Route path="/hr/command" element={<ProtectedRoute module="hr"><Layout><CommandWorkforceDashboard /></Layout></ProtectedRoute>} />
           <Route path="/hr/create-account" element={<ProtectedRoute module="hr"><Layout><CreateStaffAccount /></Layout></ProtectedRoute>} />

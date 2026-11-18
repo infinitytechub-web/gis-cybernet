@@ -19396,6 +19396,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_set_staff_id: {
+        Args: { _profile_id: string; _reason: string; _staff_id: string }
+        Returns: string
+      }
       admin_unlock_account: {
         Args: { _profile_id: string; _reason: string }
         Returns: Json
