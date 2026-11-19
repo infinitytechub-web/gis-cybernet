@@ -31,11 +31,11 @@ export async function printAssetLabel(item: AssetLabelData) {
     return;
   }
 
-  
+  const assetTag = escapeHtml(item.asset_tag);
   const html = `<!doctype html>
 <html>
 <head>
-  <title>Asset label — ${item.asset_tag}</title>
+  <title>Asset label — ${assetTag}</title>
   <style>
     @page { size: 60mm 40mm; margin: 0; }
     * { box-sizing: border-box; }
@@ -54,9 +54,9 @@ export async function printAssetLabel(item: AssetLabelData) {
 </head>
 <body>
   <div class="label">
-    <div class="qr"><img src="${qrDataUrl}" alt="QR ${item.asset_tag}"/></div>
+    <div class="qr"><img src="${escapeHtml(qrDataUrl)}" alt="QR ${assetTag}"/></div>
     <div class="meta">
-      <div class="tag">${item.asset_tag}</div>
+      <div class="tag">${assetTag}</div>
       <div class="name">${escapeHtml(item.name)}</div>
       <div class="sub">
         ${item.category ? escapeHtml(item.category) : ""}
