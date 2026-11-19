@@ -1,0 +1,6 @@
+# pnpm workspace. The root package is the web app; future shared libraries,
+# mobile, API and worker packages go under packages/* or apps/*.
+packages:
+  - "."
+  - "apps/*"
+  - "packages/*"

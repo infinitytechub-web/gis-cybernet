@@ -21,7 +21,7 @@ performs four independent checks:
 | Secrets leak scan | [gitleaks](https://github.com/gitleaks/gitleaks) | API keys, tokens, private keys committed to the repo. Allow-list lives in [`.gitleaks.toml`](.gitleaks.toml). |
 | Static analysis | [Semgrep](https://semgrep.dev) (`p/owasp-top-ten`, `p/xss`, `p/react`, `p/secrets`) + ESLint with `eslint-plugin-security` and `eslint-plugin-no-unsanitized` | XSS sinks (`dangerouslySetInnerHTML`, `innerHTML`, unescaped templating), `eval`, child-process spawns, weak RNG, regex DoS. |
 | Supabase RLS hygiene | Custom shell linter over `supabase/migrations/*.sql` | New tables that forget `ENABLE ROW LEVEL SECURITY`, permissive `USING (true)` / `WITH CHECK (true)` policies on writes, `SECURITY DEFINER` functions missing `SET search_path`, `GRANT … TO PUBLIC`. |
-| Dependency audit | `npm audit --audit-level=high` | High/critical vulnerabilities in production dependencies. |
+| Dependency audit | `pnpm audit --prod --audit-level high` | High/critical vulnerabilities in production dependencies. |
 
 The workflow also runs **weekly on Mondays at 04:30 UTC** to catch newly
 disclosed vulnerabilities in dependencies that were previously clean.
@@ -39,7 +39,7 @@ disclosed vulnerabilities in dependencies that were previously clean.
 
 - `npx gitleaks detect --redact` — secrets scan against the working tree.
 - `npx semgrep --config p/owasp-top-ten --config p/xss src/` — XSS / OWASP scan.
-- `npm audit` — dependency audit.
+- `pnpm audit` — dependency audit.
 
 ## Runtime Defences
 
@@ -221,7 +221,7 @@ We follow a **"self-host first, SRI second"** policy:
    manual dispatch — and prints `::error file=…` annotations directly on the
    offending lines in PRs.
 
-   Run locally with `npm run check:sri` (or `node scripts/check-sri.mjs`)
+   Run locally with `pnpm run check:sri` (or `node scripts/check-sri.mjs`)
    before opening a PR. Same-origin (relative) URLs are skipped.
 
 ## Realtime (postgres_changes) RLS enforcement

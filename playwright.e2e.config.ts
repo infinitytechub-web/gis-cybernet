@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * Standalone Playwright config used by `npm run test:e2e`. Runs vite preview
+ * Standalone Playwright config used by `pnpm run test:e2e`. Runs vite preview
  * against the production build, then drives @axe-core/playwright + functional
  * specs across the key user journeys.
  *
@@ -33,7 +33,7 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: "npm run build && npm run preview -- --port 4173 --strictPort",
+        command: "pnpm run build && pnpm run preview -- --port 4173 --strictPort",
         url: "http://localhost:4173",
         timeout: 180_000,
         reuseExistingServer: !process.env.CI,

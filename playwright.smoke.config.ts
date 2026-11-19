@@ -10,8 +10,8 @@ import { defineConfig, devices } from "@playwright/test";
  *   2. map tile failover   (tests/smoke/map-failover.smoke.spec.ts)
  *   3. permission checks   (tests/smoke/permissions.smoke.spec.ts)
  *
- * Run:  npm run test:smoke                 (E2E_BASE_URL or local preview)
- *       npm run test:smoke:prod            (published URL)
+ * Run:  pnpm run test:smoke                 (E2E_BASE_URL or local preview)
+ *       pnpm run test:smoke:prod            (published URL)
  *
  * The suite never creates, edits, or deletes records, so it is safe against
  * production. Checks whose credentials are missing skip with a clear reason.
@@ -40,7 +40,7 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: "npm run build && npm run preview -- --port 4173 --strictPort",
+        command: "pnpm run build && pnpm run preview -- --port 4173 --strictPort",
         url: "http://localhost:4173",
         timeout: 180_000,
         reuseExistingServer: !process.env.CI,

@@ -50,7 +50,7 @@ curl -X POST \
 ## Option B — Worker (use if Transform Rules are unavailable)
 
 ```bash
-npm i -g wrangler
+pnpm add -g wrangler   # or: pnpm dlx wrangler <command>
 cd deploy/cloudflare
 wrangler login
 wrangler deploy

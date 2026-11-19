@@ -52,16 +52,14 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Install ESLint security plugins
-        run: bun add -d eslint-plugin-security eslint-plugin-no-unsanitized
+        run: pnpm add -D eslint-plugin-security eslint-plugin-no-unsanitized
 
       - name: ESLint security rules (flat config)
         # ESLint v9 uses flat config — invoked via a dedicated security config
@@ -204,21 +202,22 @@ jobs:
   # 4. Dependency vulnerabilities
   # ───────────────────────────────────────────────────────────────────
   deps-audit:
-    name: Dependency vulnerabilities (npm audit)
+    name: Dependency vulnerabilities (pnpm audit)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: npm audit (high & critical only)
+      - uses: pnpm/action-setup@v4
+      - name: pnpm audit (high & critical only)
         run: |
           set +e
-          npm audit --omit=dev --audit-level=high
+          pnpm audit --prod --audit-level high
           code=$?
           # Don't fail the build on transient registry errors (code >= 2 is auth/network)
           if [ "$code" -gt 1 ]; then
-            echo "::warning::npm audit returned $code (likely transient) — not failing the build."
+            echo "::warning::pnpm audit returned $code (likely transient) — not failing the build."
             exit 0
           fi
           exit $code

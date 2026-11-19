@@ -43,3 +43,4 @@
 
 - Function security: `supabase/functions/AGENTS.md`.
 - Officer training self-submission: armory_submit_my_training (self, pending, head-verified) — why: no armory management rights.
+- pnpm only (pinned packageManager, sole pnpm-lock.yaml, frozen CI installs) — why: reproducible deps.
