@@ -172,13 +172,11 @@ export default function Login() {
       }
 
 
-      // Policy-driven lockout: refuse the attempt outright while locked.
+      // Administrator-set locks remain authoritative; failure logs cannot lock accounts.
       if (lookup?.locked) {
         toast({
           title: "Account Locked",
-          description: lookup.auto_unlock_minutes
-            ? `Too many failed attempts. Try again in ${lookup.auto_unlock_minutes} minute${lookup.auto_unlock_minutes === 1 ? "" : "s"}.`
-            : "Too many failed attempts. Contact an administrator to unlock this account.",
+          description: "Contact an administrator to unlock this account.",
           variant: "destructive",
         });
         throw new Error("Account locked");
@@ -215,27 +213,15 @@ export default function Login() {
           navigate("/regional-commands", { replace: true });
         }
       } catch (signInErr) {
-        // Record failed attempt server-side, against the configured policy.
-        const { data: failData } = await supabase.functions.invoke("resolve-staff-email", {
+        // Record security evidence without disabling the account.
+        await supabase.functions.invoke("resolve-staff-email", {
           body: { staff_id: trimmedId, action: "record_failure", password },
         });
-        const r = (failData ?? null) as { attempts?: number; locked?: boolean; remaining?: number } | null;
-        const threshold = lookup?.threshold ?? null;
-        if (r?.locked) {
-          toast({
-            title: "Account Locked",
-            description: threshold
-              ? `Account locked after ${threshold} failed attempts. Contact an administrator to unlock.`
-              : "Account locked after too many failed attempts. Contact an administrator to unlock.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Login Failed",
-            description: `Invalid Staff ID or password. ${r?.remaining ?? 0} attempt${(r?.remaining ?? 0) === 1 ? "" : "s"} remaining before lockout.`,
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Login Failed",
+          description: "Invalid Staff ID or password. Please check your details and try again.",
+          variant: "destructive",
+        });
         throw signInErr;
       }
 
