@@ -67,11 +67,11 @@ const ME_FIELD: AppRole[] = ["field_officer"];
 
 export const MODULES: ModuleDef[] = [
   // ── Open to every authenticated staff member ────────────────────────────
-  { key: "dashboard", label: "Dashboard", feature: "Dashboard", tier: "all-staff", roles: "all", paths: ["/dashboard", "/"] },
+  { key: "dashboard", label: "Overview", feature: "Dashboard", tier: "all-staff", roles: "all", paths: ["/dashboard", "/"] },
   { key: "staff-vault", label: "Staff Vault", tier: "all-staff", roles: "all", paths: ["/staff-vault"] },
   { key: "my-profile", label: "My Profile", tier: "all-staff", roles: "all", paths: ["/my-profile"] },
   { key: "biometric-enrollment", label: "Biometric Enrollment", tier: "all-staff", roles: "all", paths: ["/biometric-enrollment"] },
-  { key: "my-portal", label: "My Portal", tier: "all-staff", roles: "all", paths: ["/my-portal"] },
+  { key: "my-portal", label: "My Letters & Documents", tier: "all-staff", roles: "all", paths: ["/my-portal"] },
   { key: "my-shift", label: "Shift Roster", tier: "all-staff", roles: "all", paths: ["/my-shift", "/shift-roster"] },
   { key: "staff-directory", label: "Staff Directory", feature: "Staff Directory", tier: "all-staff", roles: "all", paths: ["/directory"] },
   { key: "excuse-duty", label: "Excuse Duty Form", tier: "all-staff", roles: "all", paths: ["/excuse-duty", "/excuse-duty/mine"] },

@@ -38,6 +38,7 @@ import {
 import { MessagesSquare, ClipboardList } from "lucide-react";
 import { Pin as PinIcon, Settings as SettingsIcon } from "lucide-react";
 import { navDescription } from "@/lib/nav-descriptions";
+import { showInNav } from "@/lib/nav-visibility";
 
 const commandItems = [
   { title: "Command Console", url: "/command-console", icon: MonitorDot, iconColor: "text-[hsl(220,80%,40%)] dark:text-[hsl(220,80%,70%)]" },
@@ -151,7 +152,7 @@ const allStaffItems = [
   { title: "Holding Center Verification", url: "/holding-verification", icon: ShieldCheck, iconColor: "text-primary" },
   { title: "My Profile", url: "/my-profile", icon: UserCog, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Biometric Enrollment", url: "/biometric-enrollment", icon: Fingerprint, iconColor: "text-indigo-600 dark:text-indigo-400" },
-  { title: "My Portal", url: "/my-portal", icon: Inbox, iconColor: "text-sky-600 dark:text-sky-400" },
+  { title: "My Letters & Documents", url: "/my-portal", icon: Inbox, iconColor: "text-sky-600 dark:text-sky-400" },
 ];
 
 const logisticsItems = [
@@ -253,7 +254,6 @@ const integrationsItems = [
 ];
 
 const commandVaultItems = [
-  { title: "Staff Vault", url: "/staff-vault", icon: FolderLock, iconColor: "text-primary" },
   { title: "Command Vault", url: "/command-vault", icon: FolderLock, iconColor: "text-[hsl(220,80%,40%)] dark:text-[hsl(220,80%,70%)]" },
   { title: "GPS Hub", url: "/command-vault/gps", icon: Globe2, iconColor: "text-[hsl(180,70%,40%)] dark:text-[hsl(180,70%,65%)]" },
   { title: INTERLINK_LABELS.nav, url: "/interlink", icon: Network, iconColor: "text-indigo-600 dark:text-indigo-400" },
@@ -272,9 +272,16 @@ const reportingItems = [
 ];
 
 const homeItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
+  { title: "Overview", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
   { title: "My Dashboard", url: "/portal", icon: Activity, iconColor: "text-emerald-600 dark:text-emerald-400" },
   ...allStaffItems,
+];
+
+const selfServiceItems = [
+  { title: "My Leave Requests", url: "/leave", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400" },
+  { title: "My Excuse Duty", url: "/excuse-duty/mine", icon: Heart, iconColor: "text-rose-500 dark:text-rose-300" },
+  { title: "My Appraisals", url: "/appraisals", icon: Award, iconColor: "text-amber-600 dark:text-amber-400" },
+  { title: "Staff Vault", url: "/staff-vault", icon: FolderLock, iconColor: "text-primary" },
 ];
 
 const recycleBinItems = [
@@ -402,6 +409,10 @@ export function AppSidebar() {
     return location.pathname === path || location.pathname.startsWith(path + "/");
   };
 
+  // Hover descriptions are a desktop aid; on touch/narrow screens they overflow.
+  const noHover = isMobile || (typeof window !== "undefined" && window.matchMedia?.("(hover: none)").matches);
+  const tipClass = "max-w-[min(16rem,calc(100vw-2rem))]";
+
   const renderItem = (item: NavItem) => {
     const active = isActiveRoute(item.url);
     const badgeCount =
@@ -434,6 +445,13 @@ export function AppSidebar() {
         {renderBadge(item)}
       </NavLink>
     );
+    if (noHover) {
+      return (
+        <SidebarMenuItem key={item.title}>
+          <SidebarMenuButton asChild>{link}</SidebarMenuButton>
+        </SidebarMenuItem>
+      );
+    }
     return (
       <SidebarMenuItem key={item.title}>
         <Tooltip delayDuration={200}>
@@ -442,7 +460,8 @@ export function AppSidebar() {
           </TooltipTrigger>
           <TooltipContent
             side="right"
-            className={`max-w-[16rem] ${
+            collisionPadding={16}
+            className={`${tipClass} ${
               active
                 ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary"
                 : ""
@@ -487,7 +506,7 @@ export function AppSidebar() {
     return (
       <Collapsible key={label} open={open} onOpenChange={() => toggleGroup(label, items)}>
         <SidebarMenuItem>
-          <Tooltip delayDuration={200}>
+          <Tooltip delayDuration={200} open={noHover ? false : undefined}>
             <TooltipTrigger asChild>
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton
@@ -505,7 +524,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </CollapsibleTrigger>
             </TooltipTrigger>
-            <TooltipContent side="right" className="max-w-[16rem]">
+            <TooltipContent side="right" collisionPadding={16} className={tipClass}>
               <span className="block font-semibold">{label}</span>
               <span className="mt-0.5 block text-xs font-normal opacity-90">
                 {description ?? `${items.length} item${items.length === 1 ? "" : "s"}`}
@@ -527,13 +546,13 @@ export function AppSidebar() {
    * with explicit sub-menus — become click-to-expand parents; short groups stay
    * flat. In icon-collapsed mode everything renders flat so icons stay reachable.
    */
-  const renderGroup = (label: string, allItems: NavItem[], sections: NavSection[] = []) => {
+  const renderGroup = (label: string, allItems: NavItem[], sections: NavSection[] = [], scope: "self" | "managed" = "managed") => {
     // RBAC: hide destinations the signed-in account cannot reach, and drop the
     // whole group when nothing in it is permitted.
     const permitted = (items: NavItem[]) =>
       items.filter(
         (item) =>
-          canPath(item.url.split("?")[0]) && (item.url !== "/portal" || canOpenPortal),
+          showInNav(item.url.split("?")[0], scope, role, canPath) && (item.url !== "/portal" || canOpenPortal),
       );
     const items = permitted(allItems);
     const liveSections = sections
@@ -586,13 +605,17 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent role="navigation" aria-label={collapsed ? "Collapsed navigation menu" : "Expanded navigation menu"}>
-        {renderGroup("Home & My Work", homeItems, [
+        {renderGroup("My Work", homeItems, [
           { label: "My Duty", icon: Activity, iconColor: "text-pink-600 dark:text-pink-400", items: myDutyItems },
-        ])}
-        {renderGroup("People & Organization", personnelItems)}
+          { label: "My Requests & Vault", icon: Inbox, iconColor: "text-sky-600 dark:text-sky-400", items: selfServiceItems },
+          { label: "Pay & Loans", icon: CreditCard, iconColor: "text-teal-600 dark:text-teal-400", items: paymentsLoansItems },
+        ], "self")}
         {renderGroup("Command", commandItems, [
           { label: "Command Workspace", icon: Building2, iconColor: "text-blue-700 dark:text-blue-300", items: commandWorkspaceItems },
+          { label: "People & Organization", icon: Users, iconColor: "text-purple-600 dark:text-purple-400", items: personnelItems },
           { label: "Reports & Assurance", icon: BarChart3, iconColor: "text-fuchsia-600 dark:text-fuchsia-400", items: reportingItems },
+          { label: "Secure Workspace", icon: FolderLock, iconColor: "text-primary", items: liveCommandVaultItems },
+          { label: "Confidentiality Commands", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400", items: confidentialityItems },
         ])}
         {renderGroup(
           "Human Resource",
@@ -616,23 +639,16 @@ export function AppSidebar() {
             { label: "HR Reports", icon: BarChart3, iconColor: "text-fuchsia-600 dark:text-fuchsia-400", items: hrReportItems },
           ],
         )}
-        {renderGroup("Pay & Loans", paymentsLoansItems)}
-        {renderGroup("Immigration & Enforcement", immigrationItems, [
+        {renderGroup("Operations", [], [
+          { label: "Immigration", icon: Stamp, iconColor: "text-lime-600 dark:text-lime-400", items: immigrationItems },
           { label: "Operational Security", icon: ShieldAlert, iconColor: "text-red-600 dark:text-red-400", items: securityItems },
-        ])}
-        {renderGroup("Logistics & Resources", logisticsItems, [
+          { label: "Logistics & Resources", icon: Package, iconColor: "text-amber-700 dark:text-amber-500", items: logisticsItems },
           { label: "Procurement", icon: Briefcase, iconColor: "text-emerald-700 dark:text-emerald-400", items: financeItems },
           { label: "Clinic", icon: FileHeart, iconColor: "text-emerald-700 dark:text-emerald-300", items: healthItems },
-        ])}
-        {renderGroup("M&E and Project Management", meEntryItems, [
-          { label: "Strategy & Delivery", icon: Crosshair, iconColor: "text-blue-700 dark:text-blue-300", items: meStrategyItems },
-          { label: "Measurement & Evidence", icon: Gauge, iconColor: "text-teal-600 dark:text-teal-400", items: meMeasurementItems },
-          { label: "Risk & Assurance", icon: ShieldAlert, iconColor: "text-red-600 dark:text-red-400", items: meAssuranceItems },
-          { label: "Resources & Oversight", icon: Landmark, iconColor: "text-chart-1", items: meResourceItems },
-        ])}
-
-        {renderGroup("Secure Workspace", liveCommandVaultItems, [
-          { label: "Confidentiality Commands", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400", items: confidentialityItems },
+          { label: "M&E Strategy & Delivery", icon: Crosshair, iconColor: "text-blue-700 dark:text-blue-300", items: [...meEntryItems, ...meStrategyItems] },
+          { label: "M&E Measurement & Evidence", icon: Gauge, iconColor: "text-teal-600 dark:text-teal-400", items: meMeasurementItems },
+          { label: "M&E Risk & Assurance", icon: ShieldAlert, iconColor: "text-red-600 dark:text-red-400", items: meAssuranceItems },
+          { label: "M&E Resources & Oversight", icon: Landmark, iconColor: "text-chart-1", items: meResourceItems },
         ])}
         {renderGroup("Administration", adminEntryItems, [
             { label: "Approvals", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300", items: adminApprovalItems },
