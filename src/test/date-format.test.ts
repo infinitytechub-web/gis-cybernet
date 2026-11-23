@@ -39,6 +39,12 @@ describe("formatDate", () => {
     expect(formatDate("2026-01-02")).toBe("02/01/2026");
   });
 
+  it("preserves DD/MM/YYYY input without browser month-first reinterpretation", () => {
+    expect(formatDate("02/01/2026")).toBe("02/01/2026");
+    expect(formatDate("23/11/2026")).toBe("23/11/2026");
+    expect(formatDate("31/02/2026")).toBe("—");
+  });
+
   it("always matches the DD/MM/YYYY shape across a full year of dates", () => {
     for (let month = 0; month < 12; month++) {
       const value = new Date(2024, month, 15);

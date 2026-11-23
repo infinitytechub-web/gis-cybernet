@@ -6,7 +6,7 @@
  * keys and `<input type="date">` values, plus ISO timestamps) are deliberately
  * NOT routed through here — they must stay ISO.
  */
-import { format, isValid, parseISO, differenceInYears, differenceInMonths } from "date-fns";
+import { format, isValid, parse, parseISO, differenceInYears, differenceInMonths } from "date-fns";
 
 export const DATE_FORMAT = "dd/MM/yyyy";
 export const DATE_TIME_FORMAT = "dd/MM/yyyy HH:mm";
@@ -20,6 +20,11 @@ export function toDate(value: Date | string | number | null | undefined): Date |
     const d = new Date(value);
     return isValid(d) ? d : null;
   }
+  // Never let browser parsing reinterpret a day-first date as month-first.
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+    const dayFirst = parse(value, DATE_FORMAT, new Date(2000, 0, 1));
+    return isValid(dayFirst) && format(dayFirst, DATE_FORMAT) === value ? dayFirst : null;
+  }
   const iso = parseISO(value);
   if (isValid(iso)) return iso;
   const loose = new Date(value);
@@ -30,6 +35,15 @@ export function toDate(value: Date | string | number | null | undefined): Date |
 export function formatDate(value: Date | string | number | null | undefined, fallback = "—"): string {
   const d = toDate(value);
   return d ? format(d, DATE_FORMAT) : fallback;
+}
+
+/** Education/employment periods may record only a year, month or “Present”. */
+export function formatPeriodDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  if (/^\d{4}-\d{2}-\d{2}(?:T.*)?$/.test(value) || /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+    return formatDate(value);
+  }
+  return value;
 }
 
 /** dd/MM/yyyy HH:mm */

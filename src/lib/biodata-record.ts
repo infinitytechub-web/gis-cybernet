@@ -11,12 +11,9 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { formatDate, formatPeriodDate } from "@/lib/date-format";
 
-export const dmy = (v: string | null | undefined) => {
-  if (!v) return "—";
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? String(v) : format(d, "dd/MM/yyyy");
-};
+export const dmy = (v: string | null | undefined) => formatDate(v);
 
 export const txt = (v: unknown) => {
   if (v == null || v === "") return "—";
@@ -57,8 +54,8 @@ export async function buildBioDataRecord(profileId: string): Promise<BioDataReco
       .order("effective_date", { ascending: false }),
     supabase.from("biodata_custom_values").select("field_id, value").eq("profile_id", profileId),
     supabase.from("biodata_custom_rows").select("table_id, values, sort_order").eq("profile_id", profileId).order("sort_order"),
-    supabase.from("biodata_custom_fields").select("id, section, label").eq("active", true),
-    supabase.from("biodata_custom_tables").select("id, section, label").eq("active", true),
+    supabase.from("biodata_custom_fields").select("id, section, label, field_type").eq("active", true),
+    supabase.from("biodata_custom_tables").select("id, section, label, biodata_custom_columns(id, label, column_type, sort_order)").eq("active", true),
   ]);
 
   const p: any = profileRes.data;
@@ -74,7 +71,7 @@ export async function buildBioDataRecord(profileId: string): Promise<BioDataReco
   const extrasFor = (section: string): Pair[] =>
     customFields
       .filter((f) => f.section === section)
-      .map((f) => [f.label, customValues.get(f.id) ?? ""] as Pair);
+      .map((f) => [f.label, f.field_type === "date" ? dmy(customValues.get(f.id)) : customValues.get(f.id) ?? ""] as Pair);
 
   const sections: BioDataSection[] = [];
 
@@ -89,7 +86,11 @@ export async function buildBioDataRecord(profileId: string): Promise<BioDataReco
       const rows = customRows.filter((r) => r.table_id === t.id);
       if (!rows.length) continue;
       const keys = [...new Set(rows.flatMap((r) => Object.keys(r.values ?? {})))];
-      table(section, t.label, keys, rows.map((r) => keys.map((k) => txt((r.values ?? {})[k]))));
+      const columns = t.biodata_custom_columns ?? [];
+      table(section, t.label, keys.map((k) => columns.find((c: any) => c.id === k)?.label ?? k), rows.map((r) => keys.map((k) => {
+        const value = (r.values ?? {})[k];
+        return columns.find((c: any) => c.id === k)?.column_type === "date" ? dmy(value) : txt(value);
+      })));
     }
   };
 
@@ -174,13 +175,13 @@ export async function buildBioDataRecord(profileId: string): Promise<BioDataReco
   // F
   table("F", "Educational qualifications",
     ["Name & location of school / institution", "From", "To", "Qualification"],
-    ((eduRes.data ?? []) as any[]).map((r) => [txt(r.institution), txt(r.from_date), txt(r.to_date), txt(r.qualification)]));
+    ((eduRes.data ?? []) as any[]).map((r) => [txt(r.institution), formatPeriodDate(r.from_date), formatPeriodDate(r.to_date), txt(r.qualification)]));
   extraTablesFor("F");
 
   // G
   table("G", "Previous employment / work experience",
     ["Organization / employer", "Position held", "From", "To", "Reason for leaving"],
-    ((empRes.data ?? []) as any[]).map((r) => [txt(r.employer), txt(r.position_held), txt(r.from_date), txt(r.to_date), txt(r.reason_for_leaving)]));
+    ((empRes.data ?? []) as any[]).map((r) => [txt(r.employer), txt(r.position_held), formatPeriodDate(r.from_date), formatPeriodDate(r.to_date), txt(r.reason_for_leaving)]));
   pairs("G", "Previous employment (summary)", [
     ["Last position held at previous place of work", p.previous_last_position],
     ["Reason for leaving previous place of work", p.previous_reason_for_leaving],

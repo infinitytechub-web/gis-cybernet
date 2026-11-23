@@ -5,7 +5,7 @@
  * document so the record can be filed or forwarded in a format every office
  * suite reads. Heavy library loaded on demand by the caller.
  */
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/date-format";
 import type { BioDataRecord, BioDataSection } from "@/lib/biodata-record";
 import { txt } from "@/lib/biodata-record";
 
@@ -131,7 +131,7 @@ export async function buildBioDataDocxBlob(record: BioDataRecord): Promise<Blob>
             spacing: { after: 200 },
             children: [
               new TextRun({
-                text: `${record.fullName || "Unnamed"} · Staff ID: ${record.staffId} · Printed ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
+                text: `${record.fullName || "Unnamed"} · Staff ID: ${record.staffId} · Printed ${formatDateTime(new Date())}`,
                 size: 18,
                 color: "64748B",
               }),

@@ -5,7 +5,7 @@
  * with the shared spreadsheet-safety helper so no value can be read as a
  * formula. Heavy library loaded on demand.
  */
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/date-format";
 import { sanitizeCsvValue } from "@/lib/csv-safe";
 import type { BioDataRecord } from "@/lib/biodata-record";
 import { txt } from "@/lib/biodata-record";
@@ -43,7 +43,7 @@ export async function buildBioDataXlsxBlob(record: BioDataRecord): Promise<Blob>
     [],
     ["Name", record.fullName || "Unnamed"],
     ["Staff ID", record.staffId],
-    ["Generated", format(new Date(), "dd/MM/yyyy HH:mm")],
+    ["Generated", formatDateTime(new Date())],
   ]);
 
   for (const s of record.sections) {

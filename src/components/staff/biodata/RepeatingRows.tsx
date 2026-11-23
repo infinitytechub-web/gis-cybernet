@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OptionCombobox } from "./OptionCombobox";
 import { DateInput } from "@/components/ui/date-input";
+import { formatPeriodDate, toDate } from "@/lib/date-format";
+import { format } from "date-fns";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -51,6 +53,7 @@ export function RepeatingRows({
   const field = (row: RowValue, index: number, col: RowColumn) => {
     const id = `${idPrefix}-${index}-${col.key}`;
     const value = row[col.key] ?? "";
+    const isPeriod = col.key === "from_date" || col.key === "to_date";
     if (col.type === "select") {
       return (
         <OptionCombobox
@@ -83,10 +86,14 @@ export function RepeatingRows({
       <Input
         id={id}
         type={col.type === "number" ? "number" : "text"}
-        value={value}
+        value={isPeriod && value ? formatPeriodDate(value) : value}
         placeholder={col.placeholder}
         disabled={disabled}
-        onChange={(e) => update(index, col.key, e.target.value)}
+        onChange={(e) => {
+          const text = e.target.value;
+          const date = isPeriod && /^\d{2}\/\d{2}\/\d{4}$/.test(text) ? toDate(text) : null;
+          update(index, col.key, date ? format(date, "yyyy-MM-dd") : text);
+        }}
       />
     );
   };

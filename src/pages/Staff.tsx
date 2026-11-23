@@ -53,7 +53,7 @@ type StaffStatus = Database["public"]["Enums"]["staff_status"];
 
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
 import { AgeDisplay } from "@/components/ui/age-display";
-import { DATE_FORMAT_HINT } from "@/lib/date-format";
+import { DATE_FORMAT_HINT, formatDate, formatDateTime } from "@/lib/date-format";
 import { DateInput } from "@/components/ui/date-input";
 import { useOrgScope } from "@/hooks/useOrgScope";
 import { useDirectoryPermissions, type DirectoryLevel } from "@/hooks/useDirectoryPermissions";
@@ -930,7 +930,7 @@ export default function Staff() {
         s.staff_id, s.last_name, s.first_name, s.ranks?.abbreviation ?? "—",
         s.departments?.name ?? "—", s.unit ?? "—", s.shift_group ?? "—", (s as any).intake != null ? String((s as any).intake) : "—",
         s.gender ?? "—", s.status, s.phone ?? "—",
-        joined ? format(new Date(joined), "dd/MM/yyyy") : "—",
+        formatDate(joined),
         joined ? formatService(tenure.years, tenure.months) : "—",
       ];
     });
@@ -954,7 +954,7 @@ export default function Staff() {
                 filename: `staff_export_${format(new Date(), "yyyy-MM-dd")}`,
                 headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Intake", "Sex", "Status", "Phone", "Date Joined Service", "Years of Service"],
                 rows: buildStaffExportRows(),
-                subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Records: ${filtered.length}`,
+                subtitle: `Generated: ${formatDateTime(new Date())} | Records: ${filtered.length}`,
               })}
             />
             )}

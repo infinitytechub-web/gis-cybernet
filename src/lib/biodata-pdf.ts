@@ -7,7 +7,7 @@
  * the database allows the reader; every included restricted section is recorded
  * in the access log by the shared helper.
  */
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/date-format";
 import {
   buildBioDataRecord,
   logBioDataRestrictedSections,
@@ -41,7 +41,7 @@ export async function renderBioDataPdf(record: BioDataRecord, fileBase: string):
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text(
-    `${record.fullName || "Unnamed"}   ·   Staff ID: ${record.staffId}   ·   Printed ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
+    `${record.fullName || "Unnamed"}   ·   Staff ID: ${record.staffId}   ·   Printed ${formatDateTime(new Date())}`,
     pageWidth / 2, y, { align: "center" },
   );
   y += 12;
