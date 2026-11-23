@@ -764,6 +764,20 @@
       "when": 1795393272943,
       "tag": "0108_restrict_admin_only_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 109,
+      "version": "7",
+      "when": 1795418274994,
+      "tag": "0109_admin_payroll_training_records",
+      "breakpoints": true
+    },
+    {
+      "idx": 110,
+      "version": "7",
+      "when": 1795418338682,
+      "tag": "0110_admin_hr_grant_integrity",
+      "breakpoints": true
     }
   ]
 }

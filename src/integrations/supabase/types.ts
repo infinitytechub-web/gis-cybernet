@@ -17865,6 +17865,72 @@ export type Database = {
           },
         ]
       }
+      staff_payroll_records: {
+        Row: {
+          created_at: string
+          created_by: string
+          currency: string
+          deductions: number
+          gross_pay: number
+          id: string
+          net_pay: number | null
+          notes: string
+          pay_month: string
+          profile_id: string
+          reference: string
+          revision: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          currency?: string
+          deductions?: number
+          gross_pay: number
+          id?: string
+          net_pay?: number | null
+          notes?: string
+          pay_month: string
+          profile_id: string
+          reference: string
+          revision?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          currency?: string
+          deductions?: number
+          gross_pay?: number
+          id?: string
+          net_pay?: number | null
+          notes?: string
+          pay_month?: string
+          profile_id?: string
+          reference?: string
+          revision?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_payroll_records_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_payroll_records_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_promotions: {
         Row: {
           authority: string | null
@@ -19573,6 +19639,51 @@ export type Database = {
           subject_name: string
           subject_staff_id: string
         }[]
+      }
+      admin_hr_context: { Args: { _module: string }; Returns: Json }
+      admin_hr_module_allowed: { Args: { _module: string }; Returns: boolean }
+      admin_hr_payroll_save: {
+        Args: {
+          _currency: string
+          _deductions: number
+          _gross: number
+          _id: string
+          _month: string
+          _notes: string
+          _profile: string
+          _reason: string
+          _reference: string
+          _revision?: number
+        }
+        Returns: string
+      }
+      admin_hr_payroll_void: {
+        Args: { _id: string; _reason: string; _revision: number }
+        Returns: undefined
+      }
+      admin_hr_profile_allowed: {
+        Args: { _module: string; _profile: string }
+        Returns: boolean
+      }
+      admin_hr_record_history: {
+        Args: { _id: string; _module: string }
+        Returns: Json
+      }
+      admin_hr_training_rows: { Args: never; Returns: Json }
+      admin_hr_training_save: {
+        Args: {
+          _body: string
+          _expiry: string
+          _id: string
+          _name: string
+          _notes: string
+          _number: string
+          _obtained: string
+          _profile: string
+          _reason: string
+          _updated_at?: string
+        }
+        Returns: string
       }
       admin_purge_shift_connections: { Args: never; Returns: number }
       admin_quick_search: { Args: { _q: string }; Returns: Json }
