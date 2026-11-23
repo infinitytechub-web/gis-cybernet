@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Award, Star, Trophy, Send, Save, ClipboardList, ClipboardCheck, Pencil, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { softDelete } from "@/lib/recycle-bin";
 import { format } from "date-fns";
@@ -46,6 +46,7 @@ const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov
 const TROPHY_COLORS = ["#FFD700","#C0C0C0","#CD7F32","#10b981","#3b82f6"];
 
 export default function Appraisals() {
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { data: canManage = false } = useQuery({queryKey:["appraisal-can-manage",user?.id],enabled:!!user,queryFn:async()=>{if(!user)return false;const {data,error}=await supabase.rpc("can_manage_appraisals",{_uid:user.id});if(error)throw error;return data===true;}});
 
@@ -217,7 +218,7 @@ export default function Appraisals() {
         ) : undefined}
       />
 
-      <Tabs defaultValue="queue">
+      <Tabs defaultValue={searchParams.get("tab") === "new" ? "new" : "queue"}>
         <TabsList className="department-tabs flex h-auto flex-wrap gap-1">
           <TabsTrigger value="queue">Appraisals & Approvals</TabsTrigger>
           <TabsTrigger value="charts">Top Performers</TabsTrigger>

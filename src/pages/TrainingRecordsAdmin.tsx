@@ -1,0 +1,55 @@
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { Plus, Pencil, History, RefreshCw, Search } from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { loadAdminHrContext, validateTrainingDates, type TrainingRow } from "@/lib/admin-hr";
+import { formatDate } from "@/lib/date-format";
+import { AdminHrHeader } from "@/components/admin/AdminHrHeader";
+import { AdminHrHistory } from "@/components/admin/AdminHrHistory";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { DateInput } from "@/components/ui/date-input";
+import { Textarea } from "@/components/ui/textarea";
+import { StaffCombobox } from "@/components/ui/staff-combobox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { usePagedList } from "@/hooks/usePagedList";
+import { ListPagination } from "@/components/ui/list-pagination";
+
+type Draft = { id?: string; profile: string; name: string; body: string; obtained: string; expiry: string; number: string; notes: string; reason: string; updated?: string };
+const empty = (): Draft => ({ profile: "", name: "", body: "", obtained: "", expiry: "", number: "", notes: "", reason: "" });
+export default function TrainingRecordsAdmin() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const context = useQuery({ queryKey: ["admin-hr-context", "training-admin", user?.id], enabled: !!user, queryFn: () => loadAdminHrContext("training-admin"), refetchInterval: 30_000, retry: false });
+  const query = useQuery({ queryKey: ["admin-training", user?.id], enabled: !!user && !!context.data && !context.isError, refetchInterval: 30_000, queryFn: async () => { const { data, error } = await supabase.rpc("admin_hr_training_rows"); if (error) throw error; return data as unknown as TrainingRow[]; } });
+  const [search, setSearch] = useState(""); const [command, setCommand] = useState("all"); const [status, setStatus] = useState("all"); const [draft, setDraft] = useState<Draft | null>(null); const [history, setHistory] = useState<string | null>(null); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
+  const staff = context.data?.staff ?? []; const today = format(new Date(), "yyyy-MM-dd");
+  const trainingStatus = (r: TrainingRow) => r.expiry_date && r.expiry_date < today ? "expired" : r.status;
+  const rows = context.isError ? [] : (query.data ?? []).filter(r => (command === "all" || r.org_unit_id === command) && (status === "all" || trainingStatus(r) === status) && `${r.first_name} ${r.last_name} ${r.certification_name} ${r.issuing_body ?? ""} ${r.command_name ?? ""}`.toLowerCase().includes(search.toLowerCase()));
+  const pager = usePagedList(rows, { resetKey: `${search}|${command}|${status}` });
+  const commands = Array.from(new Map(staff.filter(p => p.org_unit_id).map(p => [p.org_unit_id, p.command_name ?? "Unnamed command"])).entries());
+  const failed = context.isError || query.isError;
+  const refresh = async () => { await Promise.all(["admin-training", "certifications", "admin-hr-history"].map(key => qc.invalidateQueries({ queryKey: [key] }))); };
+  const save = async () => { if (!draft) return; setBusy(true); setError(""); try {
+    validateTrainingDates(draft.obtained, draft.expiry);
+    if (!draft.profile || !draft.name.trim()) throw new Error("Select an officer and enter the training name.");
+    const { error } = await supabase.rpc("admin_hr_training_save", { _id: draft.id ?? null, _profile: draft.profile, _name: draft.name, _body: draft.body, _obtained: draft.obtained, _expiry: draft.expiry || null, _number: draft.number, _notes: draft.notes, _reason: draft.reason, _updated_at: draft.updated ?? null });
+    if (error) throw error; setDraft(null); await refresh(); toast.success("Training record saved.");
+  } catch (e) { setError((e as { message?: string }).message ?? "Training could not be saved."); } finally { setBusy(false); } };
+  return <div className="space-y-5 p-4 md:p-6"><AdminHrHeader title="Training records" />{failed ? <div role="alert" className="text-destructive">Training records could not be loaded or access has changed. <Button variant="outline" onClick={() => { void context.refetch(); void query.refetch(); }}>Retry</Button></div> : <>
+    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">{context.isLoading || query.isLoading ? "Loading training records…" : `${rows.length} training records`}</p><div className="flex gap-2"><Button variant="outline" size="icon" aria-label="Refresh training" onClick={() => void refresh()}><RefreshCw className="h-4 w-4" /></Button><Button disabled={!context.data} onClick={() => { setError(""); setDraft(empty()); }}><Plus className="mr-2 h-4 w-4" />Add training record</Button></div></div>
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">{[["Records", rows.length], ["Officers trained", new Set(rows.map(r => r.profile_id)).size], ["Expired", rows.filter(r => trainingStatus(r) === "expired").length]].map(([label, total]) => <Card key={label}><CardContent className="p-4"><p className="text-xs text-muted-foreground">{label}</p><p className="text-2xl font-semibold">{query.isLoading || context.isLoading ? "—" : total}</p></CardContent></Card>)}</div>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><div><Label htmlFor="training-search">Search</Label><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input id="training-search" className="pl-9" placeholder="Officer, training or provider" value={search} onChange={e => setSearch(e.target.value)} /></div></div><div><Label>Command</Label><Select value={command} onValueChange={setCommand}><SelectTrigger aria-label="Training command"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All authorized commands</SelectItem>{commands.map(([id, name]) => id && <SelectItem key={id} value={id}>{name}</SelectItem>)}</SelectContent></Select></div><div><Label>Status</Label><Select value={status} onValueChange={setStatus}><SelectTrigger aria-label="Training status"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All statuses</SelectItem><SelectItem value="valid">Valid</SelectItem><SelectItem value="expired">Expired</SelectItem></SelectContent></Select></div></div>
+    <div className="overflow-x-auto rounded-md border"><Table className="min-w-[800px]"><TableHeader><TableRow>{["Officer", "Command", "Training / certification", "Provider", "Completed", "Expiry", "Status", "Actions"].map(h => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader><TableBody>{pager.pageItems.map(r => <TableRow key={r.id}><TableCell className="font-medium">{r.last_name}, {r.first_name}</TableCell><TableCell>{r.command_name ?? "Unassigned"}</TableCell><TableCell>{r.certification_name}<p className="text-xs text-muted-foreground">{r.certificate_number}</p></TableCell><TableCell>{r.issuing_body ?? "—"}</TableCell><TableCell>{formatDate(r.date_obtained)}</TableCell><TableCell>{formatDate(r.expiry_date)}</TableCell><TableCell><Badge variant={trainingStatus(r) === "expired" ? "outline" : "secondary"}>{trainingStatus(r)}</Badge></TableCell><TableCell><div className="flex gap-1"><Button variant="ghost" size="icon" aria-label="Training history" onClick={() => setHistory(r.id)}><History className="h-4 w-4" /></Button><Button variant="ghost" size="icon" aria-label="Edit training" onClick={() => { setError(""); setDraft({ id: r.id, profile: r.profile_id, name: r.certification_name, body: r.issuing_body ?? "", obtained: r.date_obtained ?? "", expiry: r.expiry_date ?? "", number: r.certificate_number ?? "", notes: r.notes ?? "", reason: "", updated: r.updated_at }); }}><Pencil className="h-4 w-4" /></Button></div></TableCell></TableRow>)}{rows.length === 0 && <TableRow><TableCell colSpan={8} className="py-8 text-center text-muted-foreground">{context.isLoading || query.isLoading ? "Loading training…" : "No training records match these filters."}</TableCell></TableRow>}</TableBody></Table></div><ListPagination {...pager} label="training records" /></>}
+    <Dialog open={!!draft} onOpenChange={open => !open && !busy && setDraft(null)}><DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl"><DialogHeader><DialogTitle>{draft?.id ? "Edit training record" : "Add training record"}</DialogTitle></DialogHeader>{draft && <div className="space-y-3"><div><Label>Officer</Label><StaffCombobox staff={staff.map(p => ({ ...p, staff_id: p.command_name ?? "Unassigned" }))} value={draft.profile} onValueChange={profile => setDraft({ ...draft, profile })} disabled={!!draft.id || busy} /></div><div><Label htmlFor="training-name">Training / certification</Label><Input id="training-name" value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} /></div><div><Label htmlFor="training-provider">Provider / issuing body</Label><Input id="training-provider" value={draft.body} onChange={e => setDraft({ ...draft, body: e.target.value })} /></div><div className="grid gap-3 sm:grid-cols-2"><div><Label htmlFor="training-completed">Completed</Label><DateInput id="training-completed" value={draft.obtained} onChange={e => setDraft({ ...draft, obtained: e.target.value })} /></div><div><Label htmlFor="training-expiry">Expiry</Label><DateInput id="training-expiry" value={draft.expiry} min={draft.obtained || undefined} onChange={e => setDraft({ ...draft, expiry: e.target.value })} /></div></div><div><Label htmlFor="training-number">Certificate number</Label><Input id="training-number" value={draft.number} onChange={e => setDraft({ ...draft, number: e.target.value })} /></div><div><Label htmlFor="training-notes">Notes</Label><Textarea id="training-notes" value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} /></div><div><Label htmlFor="training-reason">Reason for this change</Label><Textarea id="training-reason" value={draft.reason} onChange={e => setDraft({ ...draft, reason: e.target.value })} /></div></div>}{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<DialogFooter><Button variant="outline" disabled={busy} onClick={() => setDraft(null)}>Cancel</Button><Button disabled={busy || failed} onClick={() => void save()}>{busy ? "Saving…" : "Save training"}</Button></DialogFooter></DialogContent></Dialog>
+    {history && <AdminHrHistory module="training-admin" id={history} onClose={() => setHistory(null)} />}
+  </div>;
+}

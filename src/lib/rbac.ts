@@ -185,6 +185,9 @@ export const MODULES: ModuleDef[] = [
   // Audit, session, security and telemetry surfaces are audit-sensitive:
   // Admin / OIC / 2IC only. Other command-tier roles need a delegated grant.
   { key: "organization-admin", label: "Organization Admin", tier: "admin", roles: ADMIN_ONLY, paths: ["/admin/organization"] },
+  { key: "payroll-admin", label: "Payroll", tier: "admin", roles: ADMIN_ONLY, paths: ["/admin/payroll"] },
+  { key: "training-admin", label: "Training Records", tier: "command", roles: [...ADMIN_OIC_2IC, "chief_staff_officer"], paths: ["/admin/training"] },
+  { key: "performance-admin", label: "Performance Reviews", tier: "command", roles: [...ADMIN_OIC_2IC, "chief_staff_officer"], paths: ["/admin/performance"] },
   { key: "command-head-portal", label: "My Command", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/my/command"] },
   { key: "admin-console", label: "Admin Console", tier: "command", roles: COMMAND, paths: ["/admin"] },
   { key: "session-management", label: "Session Management", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/admin/sessions"] },
@@ -276,6 +279,14 @@ export function canAccessModule(key: string, input: AccessInput): boolean {
 
   // 1. Super Admins are never locked out.
   if (role === "admin") return true;
+
+  // Personnel administration grants are exact, never wildcard, and do not
+  // turn an ordinary officer into a payroll/training/review administrator.
+  if (["payroll-admin", "training-admin", "performance-admin"].includes(key)) {
+    if (!["oic", "2ic", "chief_staff_officer", "staff_officer"].includes(role)) return false;
+    if (key !== "payroll-admin" && role !== "staff_officer") return true;
+    return capabilities?.includes(key) === true;
+  }
 
   // 2. Admin-tuned matrix override wins over the code default.
   if (mod.feature && overrides) {

@@ -1,6 +1,7 @@
 # Roadmap – Holding Center / Command Operations enhancement
-- [ ] Add Administration payroll, training records and performance reviews using existing staff/workflows, command/role limits, pagination and validation; verify focused tests and access checks.
-- [ ] Verify the new administration screens signed in as ADMIN-001 after implementation.
+- [x] Add Administration payroll, training records and performance reviews with scoped, audited saves, fixed-25 pagination, exact Super Admin grants and account-specific caches; reuse certifications and appraisal workflows. 36 focused tests pass; preview build OK.
+- [x] Verify ADMIN-001 desktop/375px screens, add forms, DD/MM/YYYY training entry, appraisal-form link, 278 selectable non-deleted staff, invalid-save rejection and anonymous backend denial. No operational payroll, training or review records created.
+- [ ] Verify genuine payroll/training saved-record readback and independent performance approvals with separate-command accounts — blocked: all three registers are empty; real intended records and an approved command-head test account are needed. No publication performed.
 - [x] Restore DD/MM/YYYY in Staff/Employees and Bio-Data PDF/Word/Excel/CSV, including custom dates and education/employment periods; preserve ISO values, year-only periods and access controls. 48 focused tests pass, with 22 repeated in a different time zone; preview build OK.
 - [ ] Verify Staff/Employees and personnel downloads against live records while signed in — blocked: no app account matches the requester; preview sign-in is required. No live personnel records changed or publication performed.
 - [ ] Integrate Armory & Weapons demo capabilities into Cybernet: real command/staff links, weapon and ammunition registers, custody approvals/returns, transfers, facilities, inspections, training, audits/findings/corrections, documents, alerts, reports and immutable activity; preserve existing auth, theme and other modules.

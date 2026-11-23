@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,12 +23,13 @@ import { format } from "date-fns";
 type Row = { id: string; staff_profile_id: string; first_name: string; last_name: string; staff_id: string; command_name: string | null; org_unit_id: string | null; period_year: number; period_month: number | null; total_score: number; workflow_state: string; actions: string[]; created_at: string };
 type Context = { actions: string[]; record: Row & { comments: string | null }; scores: { criterion: string; score: number }[]; history: { id: string; action: string; to_state: string; note: string | null; created_at: string }[] };
 export function AppraisalQueue() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [command, setCommand] = useState("all");
   const [year, setYear] = useState("");
   const [selected, setSelected] = useState<Row | null>(null);
-  const query = useQuery({ queryKey: ["appraisal-queue"], refetchInterval: 30_000, queryFn: async () => {
+  const query = useQuery({ queryKey: ["appraisal-queue", user?.id], enabled: !!user, refetchInterval: 30_000, queryFn: async () => {
     const { data, error } = await supabase.rpc("appraisal_queue_rows");
     if (error) throw error;
     return (data ?? []) as unknown as Row[];
@@ -55,8 +57,9 @@ export function AppraisalQueue() {
   </div>;
 }
 function AppraisalWorkflowDialog({ row, onClose }: { row: Row; onClose: () => void }) {
+  const { user } = useAuth();
   const qc = useQueryClient(); const [scores, setScores] = useState<Record<string,number> | null>(null); const [comments, setComments] = useState<string | null>(null); const [note,setNote] = useState(""); const [confirmAction,setConfirmAction] = useState<string | null>(null); const [busy,setBusy] = useState(false); const [error,setError] = useState("");
-  const query = useQuery({ queryKey: ["appraisal-workflow",row.id], retry: false, queryFn: async () => { const {data,error} = await supabase.rpc("appraisal_workflow_context",{_appraisal:row.id}); if(error) throw error; return data as unknown as Context; } });
+  const query = useQuery({ queryKey: ["appraisal-workflow",row.id,user?.id], enabled: !!user, retry: false, queryFn: async () => { const {data,error} = await supabase.rpc("appraisal_workflow_context",{_appraisal:row.id}); if(error) throw error; return data as unknown as Context; } });
   const context=query.data; const currentScores=scores ?? Object.fromEntries((context?.scores ?? []).map(s => [s.criterion,s.score])); const editable=context?.actions.includes("save");
   const act=async (action:string) => {
     if (!context) return; setBusy(true); setError("");

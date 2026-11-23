@@ -207,6 +207,9 @@ const meResourceItems = [
 const adminEntryItems = [
   { title: "Admin Console", url: "/admin", icon: LayoutGrid, iconColor: "text-primary" },
   { title: "Organization Admin", url: "/admin/organization", icon: Building2, iconColor: "text-primary" },
+  { title: "Payroll", url: "/admin/payroll", icon: Landmark, iconColor: "text-primary" },
+  { title: "Training Records", url: "/admin/training", icon: Award, iconColor: "text-primary" },
+  { title: "Performance Reviews", url: "/admin/performance", icon: ClipboardCheck, iconColor: "text-primary" },
 ];
 
 const adminApprovalItems = [

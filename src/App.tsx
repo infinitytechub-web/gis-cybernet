@@ -52,6 +52,9 @@ const CommandAssignments = lazy(() => import("./pages/CommandAssignments"));
 const CommandAnalytics = lazy(() => import("./pages/CommandAnalytics"));
 const HrHub = lazy(() => import("./pages/HrHub"));
 const AdminOverview = lazy(() => import("./pages/AdminOverview"));
+const PayrollAdmin = lazy(() => import("./pages/PayrollAdmin"));
+const TrainingRecordsAdmin = lazy(() => import("./pages/TrainingRecordsAdmin"));
+const PerformanceReviewsAdmin = lazy(() => import("./pages/PerformanceReviewsAdmin"));
 const CommandWorkforceDashboard = lazy(() => import("./pages/CommandWorkforceDashboard"));
 const StaffProfileAdmin = lazy(() => import("./pages/StaffProfileAdmin"));
 const StaffOnDutyDashboard = lazy(() => import("./pages/StaffOnDutyDashboard"));
@@ -299,6 +302,9 @@ function App() {
           <Route path="/branding" element={<ProtectedRoute module="branding"><Layout><Branding /></Layout></ProtectedRoute>} />
           <Route path="/admin/shift-rotations" element={<ProtectedRoute module="admin-shift-rotations"><Layout><AdminShiftRotations /></Layout></ProtectedRoute>} />
           <Route path="/admin/organization" element={<ProtectedRoute module="organization-admin"><Layout><OrganizationAdmin /></Layout></ProtectedRoute>} />
+          <Route path="/admin/payroll" element={<ProtectedRoute module="payroll-admin"><Layout><PayrollAdmin /></Layout></ProtectedRoute>} />
+          <Route path="/admin/training" element={<ProtectedRoute module="training-admin"><Layout><TrainingRecordsAdmin /></Layout></ProtectedRoute>} />
+          <Route path="/admin/performance" element={<ProtectedRoute module="performance-admin"><Layout><PerformanceReviewsAdmin /></Layout></ProtectedRoute>} />
           <Route path="/my/command" element={<ProtectedRoute module="command-head-portal"><Layout><CommandHeadPortal /></Layout></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute module="admin-console"><Layout><AdminConsole /></Layout></ProtectedRoute>} />
           <Route path="/command-roles" element={<ProtectedRoute module="command-roles"><Layout><CommandRoles /></Layout></ProtectedRoute>} />

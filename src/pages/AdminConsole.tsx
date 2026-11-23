@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import {
-  Building2, Crown, MonitorSmartphone, FileSpreadsheet, Gauge, History, KeyRound, LayoutGrid, Lock,
+  Building2, Crown, MonitorSmartphone, FileSpreadsheet, Gauge, History, KeyRound, LayoutGrid, Lock, BriefcaseBusiness, ClipboardCheck,
   Megaphone, Palette, ScrollText, Shield, ShieldCheck, Siren, Trash2, UserCog, Users,
   Activity, DatabaseBackup, FolderLock, Layers, Link2, MailCheck, Phone, Settings2, ShieldAlert, Unlock,
 } from "lucide-react";
@@ -151,6 +151,15 @@ const AREAS: ConsoleArea[] = [
           { title: "Command Structure", description: "Organizational units and key appointments.", url: "/org-structure", icon: Building2, tier: "command" },
           { title: "System Information", description: "Environment, version and database details.", url: "/settings?area=system&tab=system", icon: Gauge, tier: "admin" },
           { title: "Portfolios", description: "Portfolio definitions used across staff records.", url: "/settings?area=system&tab=portfolios", icon: Layers, tier: "admin" },
+        ],
+      },
+      {
+        title: "Personnel administration",
+        description: "Command-scoped payroll, training and performance records.",
+        items: [
+          { title: "Payroll", description: "Monthly payroll records and change history.", url: "/admin/payroll", icon: BriefcaseBusiness, tier: "command" },
+          { title: "Training Records", description: "Officer training and professional certifications.", url: "/admin/training", icon: ClipboardCheck, tier: "command" },
+          { title: "Performance Reviews", description: "Appraisals and independent command-head approvals.", url: "/admin/performance", icon: ClipboardCheck, tier: "command" },
         ],
       },
       {

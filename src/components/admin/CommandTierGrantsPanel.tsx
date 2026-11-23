@@ -36,6 +36,9 @@ export const COMMAND_CAPABILITIES: { value: string; label: string; hint: string 
   { value: "armory-weapons", label: "Armory & Weapons — view", hint: "Command-scoped registers and activity" },
   { value: "armory-manage", label: "Armory & Weapons — manage", hint: "Requires armory view grant; approvals remain with Command Heads" },
   { value: "gps", label: "GPS & mapping", hint: "Live tracking and route history" },
+  { value: "payroll-admin", label: "Payroll administration", hint: "Super Admin grant; command-scoped monthly payroll" },
+  { value: "training-admin", label: "Training administration", hint: "Super Admin grant; command-scoped training records" },
+  { value: "performance-admin", label: "Performance administration", hint: "Super Admin grant; existing appraisal authority still applies" },
 ];
 
 const capLabel = (v: string) => COMMAND_CAPABILITIES.find((c) => c.value === v)?.label ?? v;
@@ -100,6 +103,7 @@ export function CommandTierGrantsPanel() {
   const grantMut = useMutation({
     mutationFn: async () => {
       if (!target) throw new Error("Select a staff member");
+      if (["payroll-admin", "training-admin", "performance-admin"].includes(capability) && !isAdmin) throw new Error("Only Super Admins can grant personnel administration access");
       let grantedByName: string | null = user?.email ?? null;
       if (user?.id) {
         const { data: me } = await supabase.from("profiles").select("first_name, last_name").eq("user_id", user.id).maybeSingle();
@@ -258,7 +262,7 @@ export function CommandTierGrantsPanel() {
               <Select value={capability} onValueChange={setCapability}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {COMMAND_CAPABILITIES.map((c) => (
+                  {COMMAND_CAPABILITIES.filter(c => isAdmin || !["payroll-admin", "training-admin", "performance-admin"].includes(c.value)).map((c) => (
                     <SelectItem key={c.value} value={c.value}>{c.label} — {c.hint}</SelectItem>
                   ))}
                 </SelectContent>

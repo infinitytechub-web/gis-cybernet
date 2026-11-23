@@ -6,6 +6,7 @@ import { AppraisalQueue } from "./AppraisalQueue";
 import { APPRAISAL_CRITERIA } from "@/lib/appraisal-workflow";
 const rpc = vi.hoisted(() => vi.fn());
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc } }));
+vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ user: { id: "reviewer-1" } }) }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
 const row = { id: "review-1", staff_profile_id: "officer-1", first_name: "TEST", last_name: "OFFICER", staff_id: "TEST-1", command_name: "Command", org_unit_id: "command-1", period_year: 2026, period_month: 11, total_score: 21, workflow_state: "submitted", actions: ["review", "return"], created_at: "2026-11-05T00:00:00Z" };
 let state: string;

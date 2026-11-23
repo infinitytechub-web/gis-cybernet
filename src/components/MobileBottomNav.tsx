@@ -69,6 +69,9 @@ const moreItems = [
 
 const adminItems = [
   { title: "Admin Console", url: "/admin", icon: Shield, iconColor: "text-primary" },
+  { title: "Payroll", url: "/admin/payroll", icon: Briefcase, iconColor: "text-primary" },
+  { title: "Training Records", url: "/admin/training", icon: Award, iconColor: "text-primary" },
+  { title: "Performance Reviews", url: "/admin/performance", icon: ClipboardCheck, iconColor: "text-primary" },
   { title: "Announcements", url: "/announcements", icon: Megaphone, iconColor: "text-red-600 dark:text-red-400" },
   { title: "Settings", url: "/settings", icon: Settings, iconColor: "text-slate-600 dark:text-slate-400" },
 ];
