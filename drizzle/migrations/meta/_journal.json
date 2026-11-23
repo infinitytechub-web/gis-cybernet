@@ -743,6 +743,13 @@
       "when": 1795392328060,
       "tag": "0105_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1795392511023,
+      "tag": "0106_scope_reporting_functions",
+      "breakpoints": true
     }
   ]
 }
