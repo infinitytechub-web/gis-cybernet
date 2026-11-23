@@ -757,6 +757,13 @@
       "when": 1795393027486,
       "tag": "0107_command_scoped_custom_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1795393272943,
+      "tag": "0108_restrict_admin_only_functions",
+      "breakpoints": true
     }
   ]
 }

@@ -106,6 +106,8 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Branding = lazy(() => import("./pages/Branding"));
 const CommandRoles = lazy(() => import("./pages/CommandRoles"));
 const AdminConsole = lazy(() => import("./pages/AdminConsole"));
+const OrganizationAdmin = lazy(() => import("./pages/OrganizationAdmin"));
+const CommandHeadPortal = lazy(() => import("./pages/CommandHeadPortal"));
 const AdminAccessMatrix = lazy(() => import("./pages/AdminAccessMatrix"));
 const CommandRoleAudit = lazy(() => import("./pages/CommandRoleAudit"));
 const Stores = lazy(() => import("./pages/Stores"));
@@ -296,6 +298,8 @@ function App() {
           <Route path="/settings" element={<ProtectedRoute module="settings"><Layout><Settings /></Layout></ProtectedRoute>} />
           <Route path="/branding" element={<ProtectedRoute module="branding"><Layout><Branding /></Layout></ProtectedRoute>} />
           <Route path="/admin/shift-rotations" element={<ProtectedRoute module="admin-shift-rotations"><Layout><AdminShiftRotations /></Layout></ProtectedRoute>} />
+          <Route path="/admin/organization" element={<ProtectedRoute module="organization-admin"><Layout><OrganizationAdmin /></Layout></ProtectedRoute>} />
+          <Route path="/my/command" element={<ProtectedRoute module="command-head-portal"><Layout><CommandHeadPortal /></Layout></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute module="admin-console"><Layout><AdminConsole /></Layout></ProtectedRoute>} />
           <Route path="/command-roles" element={<ProtectedRoute module="command-roles"><Layout><CommandRoles /></Layout></ProtectedRoute>} />
           <Route path="/admin-access-matrix" element={<ProtectedRoute module="admin-access-matrix"><Layout><AdminAccessMatrix /></Layout></ProtectedRoute>} />

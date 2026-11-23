@@ -19421,6 +19421,22 @@ export type Database = {
         Args: { _officer_unit: string; _role_unit: string }
         Returns: boolean
       }
+      _detect_rotation_conflicts_impl: {
+        Args: {
+          _end_date: string
+          _exclude_assignment_id?: string
+          _scope_type: Database["public"]["Enums"]["shift_rotation_scope"]
+          _scope_value: string
+          _start_date: string
+        }
+        Returns: {
+          assignment_id: string
+          end_date: string
+          schedule_id: string
+          schedule_name: string
+          start_date: string
+        }[]
+      }
       _directory_visible_unit: {
         Args: { _owner: string; _unit: string }
         Returns: boolean
@@ -19428,6 +19444,24 @@ export type Database = {
       _staff_list_retirement_ids: {
         Args: { _import_id: string }
         Returns: string[]
+      }
+      _verify_interlink_approval_chain_impl: {
+        Args: never
+        Returns: {
+          first_break_at: string
+          first_break_id: string
+          total: number
+          verified: number
+        }[]
+      }
+      _verify_threshold_audit_chain_impl: {
+        Args: never
+        Returns: {
+          first_break_at: string
+          first_break_id: string
+          total: number
+          verified: number
+        }[]
       }
       access_policy: {
         Args: never

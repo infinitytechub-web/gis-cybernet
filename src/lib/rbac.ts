@@ -184,6 +184,8 @@ export const MODULES: ModuleDef[] = [
   // ── Administration, security & audit ────────────────────────────────────
   // Audit, session, security and telemetry surfaces are audit-sensitive:
   // Admin / OIC / 2IC only. Other command-tier roles need a delegated grant.
+  { key: "organization-admin", label: "Organization Admin", tier: "admin", roles: ADMIN_ONLY, paths: ["/admin/organization"] },
+  { key: "command-head-portal", label: "My Command", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/my/command"] },
   { key: "admin-console", label: "Admin Console", tier: "command", roles: COMMAND, paths: ["/admin"] },
   { key: "session-management", label: "Session Management", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/admin/sessions"] },
   { key: "trusted-devices", label: "Trusted 2FA Devices", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/admin/trusted-devices"] },

@@ -65,3 +65,6 @@
 ## Armory follow-ups
 - [x] TEST weapon registers for Legon and National Headquarters, verified on Analytics
 - [x] Officer training shows on Training Status (verified records only)
+- [x] Security: remaining 28 scan issues (4 fixed, rest reviewed as intended/scoped)
+- [x] Administration: Organization Admin (commands/stations, roles, all staff)
+- [x] My Work: My Command portal (roster, leave, budgets, approvals)
