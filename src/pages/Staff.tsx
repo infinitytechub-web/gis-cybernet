@@ -989,10 +989,10 @@ export default function Staff() {
         }}
       />
 
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by name, ID, unit, or marital status..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div className="flex flex-wrap gap-2">
+        <div className="relative w-full min-w-0 basis-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
+          <Input type="search" aria-label="Search staff" placeholder="Search by name, ID, unit, or marital status..." className="h-12 w-full pl-10 text-base" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="w-full sm:w-[220px]">
           <CommandPicker
