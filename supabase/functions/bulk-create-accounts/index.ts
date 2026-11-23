@@ -159,7 +159,15 @@ Deno.serve(async (req) => {
 
     // Step 1: Clean up orphan auth users from previous failed attempts
     console.log("Step 1: Cleaning up orphan auth users...");
-    await cleanupOrphanAuthUsers(adminClient);
+    // Global orphan cleanup deletes accounts across every command, so only
+    // Super Admins may trigger it; delegated staff admins skip this step.
+    {
+      const { data: callerRoles } = await adminClient
+        .from("user_roles").select("role").eq("user_id", callerId);
+      if ((callerRoles ?? []).some((r: { role: string }) => r.role === "admin")) {
+        await cleanupOrphanAuthUsers(adminClient);
+      }
+    }
 
     // Step 2: Get active profiles without user_id (optionally a targeted subset)
     console.log("Step 2: Getting active profiles without accounts...");

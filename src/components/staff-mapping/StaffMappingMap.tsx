@@ -85,7 +85,7 @@ export function StaffMappingMap({
         icon: clusterIcon(cluster, cluster.key === selectedKey, max),
         title: `${cluster.label} — ${cluster.count} staff`,
       });
-      marker.bindTooltip(`${cluster.label}: ${cluster.count}`, { direction: "top" });
+      marker.bindTooltip(document.createTextNode(`${cluster.label}: ${cluster.count}`) as unknown as HTMLElement, { direction: "top" });
       marker.on("click", () => onSelect(cluster.key === selectedKey ? null : cluster.key));
       layer.addLayer(marker);
     });

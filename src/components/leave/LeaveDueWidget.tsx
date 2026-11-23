@@ -7,6 +7,7 @@
  * the whole service or a chosen command; commanders and supervisors only see
  * officers inside their own command and scope — the server decides, not the UI.
  */
+import { csvCellQuoted } from "@/lib/csv-safe";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -113,7 +114,7 @@ export function LeaveDueWidget({ unitId = null }: { unitId?: string | null }) {
       LEAVE_STATE_LABEL[r.state],
     ])];
     const csv = lines
-      .map((cells) => cells.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .map((cells) => cells.map((c) => csvCellQuoted(c)).join(","))
       .join("\r\n");
     downloadCSVString(csv, `leave-due-${year}.csv`);
   };

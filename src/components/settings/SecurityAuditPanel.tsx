@@ -1,5 +1,6 @@
 // src/components/settings/SecurityAuditPanel.tsx
 import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
+import { csvCellQuoted } from "@/lib/csv-safe";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,7 +100,7 @@ export function SecurityAuditPanel() {
           ``,
         ];
         const csv = metaLines.concat([headers.join(",")]).concat(
-          arr.map(r => headers.map(h => JSON.stringify(r[h] ?? "")).join(","))
+          arr.map(r => headers.map(h => csvCellQuoted(r[h] ?? "")).join(","))
         ).join("\n");
         downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8;" }), `${baseName}.csv`);
       }

@@ -114,11 +114,11 @@ export function FleetLiveMap({
       const style = { color: "hsl(35 92% 42%)", weight: 2, fillOpacity: 0.08 };
       if (fence.kind === "circle" && fence.center_lat != null && fence.center_lng != null) {
         L.circle([fence.center_lat, fence.center_lng], { radius: Number(fence.radius_m ?? 0), ...style })
-          .bindTooltip(fence.name)
+          .bindTooltip(document.createTextNode(String(fence.name ?? "")) as unknown as HTMLElement)
           .addTo(layer);
       } else {
         const pts = parsePolygon(fence.polygon);
-        if (pts.length >= 3) L.polygon(pts, style).bindTooltip(fence.name).addTo(layer);
+        if (pts.length >= 3) L.polygon(pts, style).bindTooltip(document.createTextNode(String(fence.name ?? "")) as unknown as HTMLElement).addTo(layer);
       }
     }
   }, [geofences]);

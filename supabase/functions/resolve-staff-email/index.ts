@@ -114,13 +114,13 @@ Deno.serve(async (req) => {
         });
       }
     }
-    const { data } = await supabase.rpc("record_failed_login", {
+    await supabase.rpc("record_failed_login", {
       _staff_id: raw,
       _ip_address: ip,
     });
-    const r = (data ?? {}) as { attempts?: number; locked?: boolean; remaining?: number };
+    // Never disclose per-account attempt counts to unauthenticated callers.
     return new Response(
-      JSON.stringify({ attempts: r.attempts ?? null, locked: r.locked ?? false, remaining: r.remaining ?? 0 }),
+      JSON.stringify({ attempts: null, locked: false, remaining: null }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
