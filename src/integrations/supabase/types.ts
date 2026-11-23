@@ -19417,6 +19417,10 @@ export type Database = {
         Args: { _action: string; _id: string; _note: string; _to: string }
         Returns: undefined
       }
+      _directory_visible_unit: {
+        Args: { _owner: string; _unit: string }
+        Returns: boolean
+      }
       _staff_list_retirement_ids: {
         Args: { _import_id: string }
         Returns: string[]
