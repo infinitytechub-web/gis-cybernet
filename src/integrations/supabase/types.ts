@@ -19417,6 +19417,10 @@ export type Database = {
         Args: { _action: string; _id: string; _note: string; _to: string }
         Returns: undefined
       }
+      _custom_role_unit_ok: {
+        Args: { _officer_unit: string; _role_unit: string }
+        Returns: boolean
+      }
       _directory_visible_unit: {
         Args: { _owner: string; _unit: string }
         Returns: boolean
@@ -20121,6 +20125,18 @@ export type Database = {
       custom_role_base_allowed: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
+      }
+      custom_role_history: {
+        Args: { _role_id: string }
+        Returns: {
+          action: string
+          actor_name: string
+          created_at: string
+          details: Json
+          id: string
+          officer_name: string
+          reason: string
+        }[]
       }
       decide_command_reassignment: {
         Args: { _decision: string; _note: string; _request_id: string }

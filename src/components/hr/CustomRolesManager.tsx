@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { formatDate } from "@/lib/date-format";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, Trash2, UserPlus, Users } from "lucide-react";
+import { History, Plus, Save, Trash2, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -44,6 +44,7 @@ export function CustomRolesManager() {
   const baseRoles = allowedBaseRoles(Constants.public.Enums.app_role as readonly string[], isAdmin);
   const pager = usePagedList(roles.data ?? []);
   const [viewing, setViewing] = useState<CustomRole | null>(null);
+  const [history, setHistory] = useState<CustomRole | null>(null);
   const refresh = () => ["custom-roles", "custom-role-counts", "staff-tier-summary", "custom-role-holders"].forEach(k => qc.invalidateQueries({ queryKey: [k] }));
 
   const save = async () => {
@@ -84,9 +85,11 @@ export function CustomRolesManager() {
         <TableCell><Badge variant={r.is_active ? "secondary" : "outline"}>{r.is_active ? "Active" : "Retired"}</Badge></TableCell>
         <TableCell><Button size="sm" variant="ghost" onClick={() => setDraft({ id: r.id, name: r.name, description: r.description ?? "", base_role: r.base_role, org_unit_id: r.org_unit_id ?? GLOBAL, is_active: r.is_active })}>Edit</Button>
           <Button size="sm" variant="ghost" onClick={() => setViewing(r)}><Users className="mr-1 h-4 w-4" aria-hidden />Officers</Button>
+          <Button size="sm" variant="ghost" onClick={() => setHistory(r)}><History className="mr-1 h-4 w-4" aria-hidden />History</Button>
           <Button size="sm" variant="ghost" className="text-destructive" disabled={(counts.data?.[r.id] ?? 0) > 0} title={(counts.data?.[r.id] ?? 0) > 0 ? "Remove all officers first" : "Delete role"} onClick={() => remove(r)}><Trash2 className="h-4 w-4" aria-label="Delete role" /></Button></TableCell></TableRow>)}
         {!roles.isLoading && !roles.data?.length && <TableRow><TableCell colSpan={6} className="text-muted-foreground">No custom roles yet.</TableCell></TableRow>}</TableBody></Table></div>
     <ListPagination {...pager} label="roles" />
+    {history && <RoleHistory role={history} onClose={() => setHistory(null)} />}
     {viewing && <RoleHolders role={viewing} onClose={() => setViewing(null)} onDone={refresh} />}
     <AssignCustomRole roles={(roles.data ?? []).filter(r => r.is_active)} onDone={refresh} />
   </div>;
@@ -96,7 +99,18 @@ function AssignCustomRole({ roles, onDone }: { roles: CustomRole[]; onDone: () =
   const [q, setQ] = useState(""); const [picked, setPicked] = useState<QuickUserRow | null>(null);
   const [role, setRole] = useState(""); const [reason, setReason] = useState(""); const [busy, setBusy] = useState(false);
   const staff = useQuery({ queryKey: ["quick-user-search-rows"], queryFn: async () => { const { data, error } = await supabase.rpc("staff_directory_rows"); if (error) throw error; return (data ?? []) as QuickUserRow[]; } });
-  const results = useMemo(() => filterQuickUsers(staff.data ?? [], q).slice(0, 10), [staff.data, q]);
+  // A command role may only go to officers posted in that command or beneath it.
+  const roleUnit = roles.find(r => r.id === role)?.org_unit_id ?? null;
+  const eligible = useQuery({ queryKey: ["custom-role-eligible", roleUnit], enabled: !!roleUnit, queryFn: async () => {
+    const { data: units } = await supabase.from("org_units").select("id,parent_id");
+    const ids = descendantUnits(roleUnit!, (units ?? []) as { id: string; parent_id: string | null }[]);
+    const { data, error } = await supabase.from("profiles").select("id").in("org_unit_id", ids).is("deleted_at", null);
+    if (error) throw error; return new Set((data ?? []).map(r => r.id));
+  } });
+  const results = useMemo(() => {
+    const pool = roleUnit ? (staff.data ?? []).filter(r => eligible.data?.has(r.id)) : (staff.data ?? []);
+    return filterQuickUsers(pool, q).slice(0, 10);
+  }, [staff.data, q, roleUnit, eligible.data]);
   const run = async (remove: boolean) => {
     if (!picked || !role) return;
     setBusy(true);
@@ -108,6 +122,7 @@ function AssignCustomRole({ roles, onDone }: { roles: CustomRole[]; onDone: () =
   return <Card><CardHeader><CardTitle className="flex items-center gap-2 text-base"><UserPlus className="h-4 w-4" aria-hidden />Assign a custom role</CardTitle></CardHeader>
     <CardContent className="grid gap-3 md:grid-cols-2">
       <div className="space-y-2"><Label htmlFor="cr-officer">Officer</Label><Input id="cr-officer" value={q} onChange={e => setQ(e.target.value)} placeholder="Type name, staff ID, rank or unit" />
+        {roleUnit && <p className="text-xs text-muted-foreground">Showing only officers posted in this role's command.</p>}
         <ul className="max-h-56 space-y-1 overflow-y-auto">{results.map(r => <li key={r.id}><button type="button" onClick={() => setPicked(r)} className={`w-full rounded-md border px-3 py-2 text-left text-sm ${picked?.id === r.id ? "border-primary bg-primary/10" : "hover:bg-muted"}`}>{r.first_name} {r.last_name} <span className="text-muted-foreground">· {r.unit ?? "No unit"}</span></button></li>)}</ul></div>
       <div className="space-y-3">
         <div><Label>Role</Label><Select value={role} onValueChange={setRole}><SelectTrigger><SelectValue placeholder="Choose a role" /></SelectTrigger><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent></Select></div>
@@ -143,5 +158,34 @@ function RoleHolders({ role, onClose, onDone }: { role: CustomRole; onClose: () 
           <TableCell>{h.profile && <Button size="sm" variant="outline" onClick={() => unassign(h.profile!.id, n)}>Remove</Button>}</TableCell></TableRow>; })}
           {!holders.isLoading && !holders.data?.length && <TableRow><TableCell colSpan={5} className="text-muted-foreground">No officers hold this role.</TableCell></TableRow>}</TableBody></Table></div>
       <ListPagination {...pager} label="officers" />
+    </CardContent></Card>;
+}
+
+/** Every unit id at or beneath `root` in the command tree. */
+export function descendantUnits(root: string, units: { id: string; parent_id: string | null }[]): string[] {
+  const out = [root]; const seen = new Set(out);
+  for (let i = 0; i < out.length; i++) for (const u of units) if (u.parent_id === out[i] && !seen.has(u.id)) { seen.add(u.id); out.push(u.id); }
+  return out;
+}
+
+const ACTIONS: Record<string, string> = { create_role: "Created", update_role: "Edited", assign_role: "Assigned", unassign_role: "Removed" };
+function RoleHistory({ role, onClose }: { role: CustomRole; onClose: () => void }) {
+  const rows = useQuery({ queryKey: ["custom-role-history", role.id], queryFn: async () => {
+    const { data, error } = await supabase.rpc("custom_role_history", { _role_id: role.id });
+    if (error) throw error; return data ?? [];
+  } });
+  const pager = usePagedList(rows.data ?? []);
+  return <Card><CardHeader className="flex flex-row items-center justify-between gap-2"><div><CardTitle className="text-base">History of “{role.name}”</CardTitle>
+    <CardDescription>Every change and assignment, newest first.</CardDescription></div>
+    <Button size="sm" variant="ghost" onClick={onClose}>Close</Button></CardHeader>
+    <CardContent>
+      {rows.error && <p className="text-sm text-destructive">{(rows.error as Error).message}</p>}
+      <div className="overflow-x-auto"><Table className="min-w-[700px]"><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Action</TableHead><TableHead>Officer</TableHead><TableHead>By</TableHead><TableHead>Reason</TableHead></TableRow></TableHeader>
+        <TableBody>{pager.pageItems.map(h => <TableRow key={h.id}>
+          <TableCell className="whitespace-nowrap">{formatDate(h.created_at)} {new Date(h.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}</TableCell>
+          <TableCell><Badge variant="secondary">{ACTIONS[h.action] ?? h.action}</Badge></TableCell>
+          <TableCell>{h.officer_name ?? "—"}</TableCell><TableCell>{h.actor_name ?? "System"}</TableCell><TableCell>{h.reason ?? "—"}</TableCell></TableRow>)}
+          {!rows.isLoading && !rows.data?.length && <TableRow><TableCell colSpan={5} className="text-muted-foreground">No history yet.</TableCell></TableRow>}</TableBody></Table></div>
+      <ListPagination {...pager} label="entries" />
     </CardContent></Card>;
 }

@@ -750,6 +750,13 @@
       "when": 1795392511023,
       "tag": "0106_scope_reporting_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1795393027486,
+      "tag": "0107_command_scoped_custom_roles",
+      "breakpoints": true
     }
   ]
 }
