@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ArrowLeft, CheckCircle2, XCircle, RefreshCw, ClipboardCheck, Eye } from "lucide-react";
@@ -29,10 +29,11 @@ const DECIDED = ["approved", "rejected", "acknowledged", "returned", "discrepanc
 
 export default function ArmoryApprovals() {
   const { user } = useAuth();
+  const [params] = useSearchParams();
   const qc = useQueryClient();
   const { formatStaffId } = useStaffIdDisplay("directory");
   const [view, setView] = useState("awaiting");
-  const [unit, setUnit] = useState("all");
+  const [unit, setUnit] = useState(() => params.get("command") || "all");
   const [kind, setKind] = useState("all");
   const [decision, setDecision] = useState<{ record: ArmoryRecord; action: "approve" | "reject" } | null>(null);
   const [reason, setReason] = useState("");

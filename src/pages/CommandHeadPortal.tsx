@@ -5,6 +5,8 @@ import { Building2, CalendarClock, CalendarOff, ClipboardCheck, Crosshair, Walle
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRbac } from "@/hooks/useRbac";
+import { usePagedList } from "@/hooks/usePagedList";
+import { ListPagination } from "@/components/ui/list-pagination";
 import { useProcurementBudgets } from "@/hooks/useProcurementRequests";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,6 +62,8 @@ export default function CommandHeadPortal() {
     { key: "procurement", title: "Procurement", module: "procurement" },
   ].filter(item => !permissionsLoading && can(item.module));
   const reviews = data?.appraisal_access ? data.appraisals?.filter(row => ["submitted", "under_review"].includes(row.status ?? "")) ?? [] : [];
+  const budgetPager = usePagedList(budgetRows, { resetKey: year });
+  const reviewPager = usePagedList(reviews, { resetKey: year });
 
   return <div className="min-w-0 space-y-5">
     <header className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
@@ -95,8 +99,9 @@ export default function CommandHeadPortal() {
         <TabsContent value="leave" className="min-w-0 space-y-4 pt-3"><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-semibold">Staff on leave · {formatDate(day)}</h2>{can("leave-approvals") && <Button variant="outline" size="sm" onClick={() => setView("approvals")}>Review leave requests</Button>}</div><CommandPortalRecords key={day} view="leave" rows={approvedLeave} /></TabsContent>
         <TabsContent value="budgets" className="min-w-0 space-y-4 pt-3"><h2 className="text-lg font-semibold">Procurement budgets · {year}</h2>
           {!can("procurement") ? <p className="text-sm text-muted-foreground">Budget access is not authorized for your account.</p> : !scope ? null : budgets.isError ? <p role="alert" className="text-sm text-destructive">Budgets could not be loaded. <Button variant="outline" size="sm" onClick={() => void budgets.refetch()}>Retry</Button></p> : budgets.isLoading ? <p role="status">Loading budgets…</p> : !budgetRows.length ? <p className="py-6 text-sm text-muted-foreground">No procurement budget or spending recorded for your command in {year}.</p> : <>
-            <div className="divide-y md:hidden">{budgetRows.map(row => <article key={row.org_unit_id} className="space-y-3 py-4"><h3 className="break-words font-medium">{row.org_unit_name}</h3><dl className="grid grid-cols-2 gap-3 text-sm">{[["Budget", row.budget_amount], ["Committed", row.committed], ["Pending", row.pending], ["Remaining", row.remaining]].map(([title, amount]) => <div key={title}><dt className="text-muted-foreground">{title}</dt><dd className="break-words font-medium">{money(Number(amount), row.currency)}</dd></div>)}</dl><Badge variant={row.over_budget ? "destructive" : "outline"}>{row.over_budget ? "Over budget" : row.utilisation_pct == null ? "No allocation" : `${row.utilisation_pct}% used`}</Badge></article>)}</div>
-            <div className="hidden min-w-0 overflow-x-auto md:block"><Table className="min-w-[700px]"><TableHeader><TableRow>{["Command / Unit", "Budget", "Committed", "Pending", "Remaining", "Used"].map(title => <TableHead key={title}>{title}</TableHead>)}</TableRow></TableHeader><TableBody>{budgetRows.map(row => <TableRow key={row.org_unit_id}><TableCell className="font-medium">{row.org_unit_name}</TableCell>{[row.budget_amount, row.committed, row.pending, row.remaining].map((amount, i) => <TableCell key={i}>{money(amount, row.currency)}</TableCell>)}<TableCell><Badge variant={row.over_budget ? "destructive" : "outline"}>{row.utilisation_pct == null ? "No allocation" : `${row.utilisation_pct}%`}</Badge></TableCell></TableRow>)}</TableBody></Table></div>
+            <div className="divide-y md:hidden">{budgetPager.pageItems.map(row => <article key={row.org_unit_id} className="space-y-3 py-4"><h3 className="break-words font-medium">{row.org_unit_name}</h3><dl className="grid grid-cols-2 gap-3 text-sm">{[["Budget", row.budget_amount], ["Committed", row.committed], ["Pending", row.pending], ["Remaining", row.remaining]].map(([title, amount]) => <div key={title}><dt className="text-muted-foreground">{title}</dt><dd className="break-words font-medium">{money(Number(amount), row.currency)}</dd></div>)}</dl><Badge variant={row.over_budget ? "destructive" : "outline"}>{row.over_budget ? "Over budget" : row.utilisation_pct == null ? "No allocation" : `${row.utilisation_pct}% used`}</Badge></article>)}</div>
+            <div className="hidden min-w-0 overflow-x-auto md:block"><Table className="min-w-[700px]"><TableHeader><TableRow>{["Command / Unit", "Budget", "Committed", "Pending", "Remaining", "Used"].map(title => <TableHead key={title}>{title}</TableHead>)}</TableRow></TableHeader><TableBody>{budgetPager.pageItems.map(row => <TableRow key={row.org_unit_id}><TableCell className="font-medium">{row.org_unit_name}</TableCell>{[row.budget_amount, row.committed, row.pending, row.remaining].map((amount, i) => <TableCell key={i}>{money(amount, row.currency)}</TableCell>)}<TableCell><Badge variant={row.over_budget ? "destructive" : "outline"}>{row.utilisation_pct == null ? "No allocation" : `${row.utilisation_pct}%`}</Badge></TableCell></TableRow>)}</TableBody></Table></div>
+            <ListPagination {...budgetPager} label="budget allocations" />
           </>}
         </TabsContent>
         <TabsContent value="approvals" className="min-w-0 space-y-5 pt-3">
@@ -106,7 +111,7 @@ export default function CommandHeadPortal() {
             {can("procurement") && <TabsContent value="procurement" className="min-w-0 pt-3"><CommandPortalProcurement scope={scope} /></TabsContent>}
           </Tabs>}
           {scope && can("armory-weapons") && <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4"><h2 className="flex items-center gap-2 text-base font-semibold"><Crosshair className="h-4 w-4 text-primary" aria-hidden="true" />Armory custody, transfers & inspections</h2><Button asChild variant="outline" size="sm"><Link to={`/armory-weapons/approvals?command=${data.command?.id}`}>Review armory approvals</Link></Button></div>}
-          {reviews.length > 0 && <section className="space-y-3 border-t pt-4"><h2 className="text-base font-semibold">Performance reviews · {year}</h2>{reviews.map(row => row.staff_profile_id && row.period_year && <div key={row.id} className="flex flex-wrap items-center justify-between gap-2"><span className="break-words text-sm">{row.name}</span><Button asChild variant="outline" size="sm"><Link to={appraisalDetailLink({ staff_profile_id: row.staff_profile_id, period_year: row.period_year, period_month: row.period_month ?? null })}>Open review</Link></Button></div>)}</section>}
+          {reviews.length > 0 && <section className="space-y-3 border-t pt-4"><h2 className="text-base font-semibold">Performance reviews · {year}</h2>{reviewPager.pageItems.map(row => row.staff_profile_id && row.period_year && <div key={row.id} className="flex flex-wrap items-center justify-between gap-2"><span className="break-words text-sm">{row.name}</span><Button asChild variant="outline" size="sm"><Link to={appraisalDetailLink({ staff_profile_id: row.staff_profile_id, period_year: row.period_year, period_month: row.period_month ?? null })}>Open review</Link></Button></div>)}<ListPagination {...reviewPager} label="performance reviews" /></section>}
         </TabsContent>
       </Tabs>
     </>}
