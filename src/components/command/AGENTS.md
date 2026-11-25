@@ -1,0 +1,2 @@
+# Command Head Portal
+- My Work's portal narrows existing server-derived workforce and caller-RLS records to the assigned branch; reuse leave/HR decisions and Procurement's detail dialog, never duplicate approval authority or registers — why: one command workspace without broader access or divergent workflows.

@@ -188,7 +188,7 @@ export const MODULES: ModuleDef[] = [
   { key: "payroll-admin", label: "Payroll", tier: "admin", roles: ADMIN_ONLY, paths: ["/admin/payroll"] },
   { key: "training-admin", label: "Training Records", tier: "command", roles: [...ADMIN_OIC_2IC, "chief_staff_officer"], paths: ["/admin/training"] },
   { key: "performance-admin", label: "Performance Reviews", tier: "command", roles: [...ADMIN_OIC_2IC, "chief_staff_officer"], paths: ["/admin/performance"] },
-  { key: "command-head-portal", label: "My Command", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/my/command"] },
+  { key: "command-head-portal", label: "Command Head Portal", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/my/command"] },
   { key: "admin-console", label: "Admin Console", tier: "command", roles: COMMAND, paths: ["/admin"] },
   { key: "session-management", label: "Session Management", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/admin/sessions"] },
   { key: "trusted-devices", label: "Trusted 2FA Devices", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/admin/trusted-devices"] },

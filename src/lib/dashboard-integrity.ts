@@ -4,6 +4,7 @@ export const DASHBOARD_QUERY_KEYS = [
   "regional-commands", "today-duty", "command-approval-queue",
   "hr-hub-staff-stats", "staff", "directory-staff", "staff-mapping-rows", "staff-applications",
   "command-workforce", "hr-duty-summary", "shifts", "shift-assignments", "attendance", "my-attendance",
+  "command-portal-units", "command-portal-procurement", "procurement-budgets",
   "portal-week-attendance", "portal-my-leave", "my-excuse-forms", "my-excuse-subs",
   "appraisal-queue", "appraisals-list", "appraisal-workflow", "appraisal-detail", "appraisal-audit", "top5-month", "top5-year",
   "leave-requests", "my-leave-requests", "leave-admin-dashboard", "leave-balances", "leave-usage-by-location",

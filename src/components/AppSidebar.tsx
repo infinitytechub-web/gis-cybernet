@@ -277,7 +277,7 @@ const reportingItems = [
 const homeItems = [
   { title: "Overview", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
   { title: "My Dashboard", url: "/portal", icon: Activity, iconColor: "text-emerald-600 dark:text-emerald-400" },
-  { title: "My Command", url: "/my/command", icon: Crown, iconColor: "text-primary" },
+  { title: "Command Head Portal", url: "/my/command", icon: Crown, iconColor: "text-primary" },
   ...allStaffItems,
 ];
 

@@ -33,8 +33,8 @@ import { refreshLeaveDashboards, validateLeaveDecision } from "@/lib/leave-workf
 import { usePagedList } from "@/hooks/usePagedList";
 import { ListPagination } from "@/components/ui/list-pagination";
 
-export function LeaveApprovalQueue() {
-  const { isAdmin, isOic, is2ic } = useAuth();
+export function LeaveApprovalQueue({ profileIds }: { profileIds?: readonly string[] } = {}) {
+  const { user, isAdmin, isOic, is2ic } = useAuth();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("pending");
   const [search, setSearch] = useState("");
@@ -60,7 +60,8 @@ export function LeaveApprovalQueue() {
   const canRevert = isAdmin;                             // put a decided request back to pending
 
   const { data: requests = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ["leave-requests"],
+    queryKey: ["leave-requests", user?.id],
+    enabled: !!user,
     refetchInterval: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("leave_request_queue");
@@ -103,13 +104,14 @@ export function LeaveApprovalQueue() {
     onError: (e: any) => toast.error(e?.message ?? "Delete failed"),
   });
 
-  const filtered = requests.filter((r: any) => {
+  const scopedRequests = profileIds ? requests.filter((r: any) => profileIds.includes(r.profile_id)) : requests;
+  const filtered = scopedRequests.filter((r: any) => {
     const name = `${r.profiles?.last_name} ${r.profiles?.first_name} ${r.profiles?.staff_id}`.toLowerCase();
     return (statusFilter === "all" || r.status === statusFilter) && (!search || name.includes(search.toLowerCase()));
   });
   const pager = usePagedList(filtered, { resetKey: `${search}|${statusFilter}` });
 
-  const pendingCount = requests.filter((r: any) => r.status === "pending").length;
+  const pendingCount = scopedRequests.filter((r: any) => r.status === "pending").length;
 
   const statusColor = (s: string) => {
     switch (s) {
@@ -150,8 +152,8 @@ export function LeaveApprovalQueue() {
       <div className="grid grid-cols-3 gap-3">
         {([
           { key: "pending", label: "Pending", value: pendingCount, Icon: Clock, tone: "text-warning" },
-          { key: "approved", label: "Approved", value: requests.filter((r: any) => r.status === "approved").length, Icon: CheckCircle2, tone: "text-success" },
-          { key: "rejected", label: "Rejected", value: requests.filter((r: any) => r.status === "rejected").length, Icon: XCircle, tone: "text-destructive" },
+          { key: "approved", label: "Approved", value: scopedRequests.filter((r: any) => r.status === "approved").length, Icon: CheckCircle2, tone: "text-success" },
+          { key: "rejected", label: "Rejected", value: scopedRequests.filter((r: any) => r.status === "rejected").length, Icon: XCircle, tone: "text-destructive" },
         ] as const).map(({ key, label, value, Icon, tone }) => (
           <Card
             key={key}

@@ -611,7 +611,7 @@ function RaiseRequestDialog({
 
 /* ── Detail: approve / receive / audit ────────────────────────────────────── */
 
-function RequestDetailDialog({
+export function RequestDetailDialog({
   request, canManage, isOwner, onClose,
 }: { request: ProcurementRequest; canManage: boolean; isOwner: boolean; onClose: () => void }) {
   const submit = useSubmitProcurementRequest();

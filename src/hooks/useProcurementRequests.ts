@@ -230,10 +230,12 @@ export async function validateProcurementPhoto(file: File): Promise<string | nul
 
 /** Budget vs committed/pending spend for every unit with a budget or activity. */
 export function useProcurementBudgets(fiscalYear?: number, enabled = true) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["procurement-budgets", fiscalYear ?? "current"],
-    enabled,
+    queryKey: ["procurement-budgets", fiscalYear ?? "current", user?.id],
+    enabled: enabled && !!user,
     staleTime: 60_000,
+    refetchInterval: 60_000,
     queryFn: async (): Promise<BudgetStatus[]> => {
       const { data, error } = await supabase.rpc("procurement_budget_status", {
         _fiscal_year: fiscalYear ?? null,
@@ -497,6 +499,7 @@ export function useReceiveProcurementRequest() {
 
 function invalidate(qc: ReturnType<typeof useQueryClient>, id?: string) {
   qc.invalidateQueries({ queryKey: ["procurement-requests"] });
+  qc.invalidateQueries({ queryKey: ["command-portal-procurement"] });
   qc.invalidateQueries({ queryKey: ["command-console"] });
   qc.invalidateQueries({ queryKey: ["command-dashboard"] });
   qc.invalidateQueries({ queryKey: ["procurement-stock"] });

@@ -12,21 +12,32 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/useAuth";
+import { readRecordPages } from "@/lib/read-record-pages";
+import { transferInPortalScope, type PortalScope } from "@/lib/command-head-portal";
 
-type Row = { kind: "transfer" | "promotion"; id: string; staff_name: string; status: string; stage: string; from_unit: string | null; to_unit: string | null; detail: string | null; created_at: string; can_act: boolean };
+type Row = { kind: "transfer" | "promotion"; id: string; profile_id: string; staff_name: string; status: string; stage: string; from_unit: string | null; to_unit: string | null; detail: string | null; created_at: string; can_act: boolean };
 
-export function CommandApprovalQueue() {
+export function CommandApprovalQueue({ scope }: { scope?: PortalScope } = {}) {
+  const { user } = useAuth();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [decision, setDecision] = useState<{ row: Row; approve: boolean } | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const q = useQuery({
-    queryKey: ["command-approval-queue"],
+    queryKey: ["command-approval-queue", user?.id, scope?.unitIds.join(","), scope?.profileIds.join(",")],
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await (supabase.rpc as any)("command_approval_queue");
       if (error) throw error;
-      return (data ?? []) as Row[];
+      const rows = (data ?? []) as Row[];
+      if (!scope) return rows;
+      const transfers = rows.some(row => row.kind === "transfer") ? await readRecordPages(from => supabase
+        .from("staff_transfer_requests").select("id, profile_id, from_org_unit_id, to_org_unit_id")
+        .in("status", ["pending", "recommended"]).order("id").range(from, from + 499)) : [];
+      const transferIds = new Set(transfers.filter(row => transferInPortalScope(row, scope)).map(row => row.id));
+      return rows.filter(row => row.kind === "transfer" ? transferIds.has(row.id) : scope.profileIds.includes(row.profile_id));
     },
     refetchInterval: 60_000,
   });

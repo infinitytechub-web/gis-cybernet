@@ -28,6 +28,7 @@ const primaryTabs = [
 ];
 
 const moreItems = [
+  { title: "Command Head Portal", url: "/my/command", icon: Building2, iconColor: "text-primary", group: "My Work" },
   // Command
   { title: "Command Dashboard", url: "/command-dashboard", icon: Gauge, iconColor: "text-emerald-700 dark:text-emerald-300", group: "Command" },
   { title: "Command Console", url: "/command-console", icon: Activity, iconColor: "text-primary", group: "Command" },
