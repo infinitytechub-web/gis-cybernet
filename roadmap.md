@@ -1,4 +1,5 @@
 # Roadmap – Holding Center / Command Operations enhancement
+- [ ] Complete My Work Command Head Portal with own-command duty roster, current leave, budgets, actionable approval queues, permission gates and desktop/mobile verification.
 - [x] Add Administration payroll, training records and performance reviews with scoped, audited saves, fixed-25 pagination, exact Super Admin grants and account-specific caches; reuse certifications and appraisal workflows. 36 focused tests pass; preview build OK.
 - [x] Verify ADMIN-001 desktop/375px screens, add forms, DD/MM/YYYY training entry, appraisal-form link, 278 selectable non-deleted staff, invalid-save rejection and anonymous backend denial. No operational payroll, training or review records created.
 - [ ] Verify genuine payroll/training saved-record readback and independent performance approvals with separate-command accounts — blocked: all three registers are empty; real intended records and an approved command-head test account are needed. No publication performed.
