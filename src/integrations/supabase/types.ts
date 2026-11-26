@@ -19616,6 +19616,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_command_officer_search: {
+        Args: { _term: string }
+        Returns: {
+          first_name: string
+          id: string
+          last_name: string
+          staff_id: string
+          status: Database["public"]["Enums"]["staff_status"]
+        }[]
+      }
       admin_command_overview: {
         Args: never
         Returns: {

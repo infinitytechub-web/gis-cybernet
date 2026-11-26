@@ -457,12 +457,9 @@ function AppointDialog({
     queryKey: ["admin-appoint-search", query],
     enabled: open && query.trim().length >= 2,
     queryFn: async () => {
-      const q = query.trim();
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, staff_id, first_name, last_name, status")
-        .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,staff_id.ilike.%${q}%`)
-        .limit(20);
+      const { data, error } = await supabase.rpc("admin_command_officer_search", {
+        _term: query.trim(),
+      });
       if (error) throw error;
       return (data ?? []) as Candidate[];
     },

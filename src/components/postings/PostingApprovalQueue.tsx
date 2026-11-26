@@ -37,7 +37,8 @@ export function PostingApprovalQueue() {
     queryKey: ["my-profile", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id").eq("user_id", user!.id).maybeSingle();
+      if (!user) return null;
+      const { data, error } = await supabase.from("profiles").select("id").eq("user_id", user.id).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -61,6 +62,10 @@ export function PostingApprovalQueue() {
 
   const approveMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: "approved" | "rejected" }) => {
+      const record = records.find((r) => r.id === id);
+      if (!adminProfile || !record || record.profile_id === adminProfile.id) {
+        throw new Error("Another authorized officer must decide your posting or transfer.");
+      }
       const { error } = await supabase
         .from("postings_transfers")
         .update({ status: action, approved_by: adminProfile?.id ?? null, remarks: comments || null })
@@ -193,7 +198,7 @@ export function PostingApprovalQueue() {
                     <TableCell><Badge variant="secondary" className={statusColor(r.status)}>{r.status}</Badge></TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        {r.status === "pending" && (
+                        {r.status === "pending" && canManage && adminProfile && r.profile_id !== adminProfile.id && (
                           <Button variant="outline" size="sm" onClick={() => { setSelectedRecord(r); setComments(""); }}>
                             <FileText className="h-4 w-4" />
                           </Button>
@@ -279,10 +284,10 @@ export function PostingApprovalQueue() {
                 <ApprovalAuditTrail entityType="posting_transfer" entityId={selectedRecord.id} />
               </div>
               <div className="flex gap-2">
-                <Button className="flex-1 gap-1" onClick={() => approveMutation.mutate({ id: selectedRecord.id, action: "approved" })} disabled={approveMutation.isPending}>
+                <Button className="flex-1 gap-1" onClick={() => approveMutation.mutate({ id: selectedRecord.id, action: "approved" })} disabled={approveMutation.isPending || !canManage || !adminProfile || selectedRecord.profile_id === adminProfile.id}>
                   <CheckCircle2 className="h-4 w-4" /> Approve
                 </Button>
-                <Button variant="destructive" className="flex-1 gap-1" onClick={() => approveMutation.mutate({ id: selectedRecord.id, action: "rejected" })} disabled={approveMutation.isPending}>
+                <Button variant="destructive" className="flex-1 gap-1" onClick={() => approveMutation.mutate({ id: selectedRecord.id, action: "rejected" })} disabled={approveMutation.isPending || !canManage || !adminProfile || selectedRecord.profile_id === adminProfile.id}>
                   <XCircle className="h-4 w-4" /> Reject
                 </Button>
               </div>
