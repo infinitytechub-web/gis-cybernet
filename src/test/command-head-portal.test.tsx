@@ -74,7 +74,7 @@ describe("command portal records and decisions", () => {
   it("approves an own-command leave request with mandatory comments and reads the new status back", async () => {
     mount(); await screen.findByText("OFFICER, OWN");
     fireEvent.click(screen.getByTitle("Review request"));
-    const approve = screen.getByRole("button", { name: "Approve", exact: true });
+    const approve = screen.getByRole("button", { name: /^Approve$/ });
     expect(approve).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Decision comments (required)"), { target: { value: "Duty cover confirmed" } });
     fireEvent.click(approve);
@@ -87,7 +87,7 @@ describe("command portal records and decisions", () => {
   });
   it("shows only assigned-branch budgets even to a broadly authorized reader", async () => {
     mount(); await screen.findByText("Own command");
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "Budgets", exact: true }), { button: 0, ctrlKey: false });
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /^Budgets$/ }), { button: 0, ctrlKey: false });
     await screen.findAllByText("OWN BUDGET");
     expect(screen.queryByText("OTHER BUDGET")).not.toBeInTheDocument();
     expect(screen.getAllByText("GHS 1,050.00")).toHaveLength(2);
