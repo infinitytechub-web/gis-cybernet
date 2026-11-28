@@ -1010,7 +1010,7 @@ export default function GpsAddresses() {
   };
 
 
-  // ===== Cloud export (S3-style storage + time-limited signed URL) =====
+  // ===== Cloud export (authenticated, revocable app link) =====
   const [cloudOpen, setCloudOpen] = useState(false);
   const [cloudBusy, setCloudBusy] = useState(false);
   const [cloudResult, setCloudResult] = useState<{
@@ -1065,16 +1065,16 @@ export default function GpsAddresses() {
         body: { csv, filename, expiresIn, recordCount: filtered.length, filtersSummary: subtitle },
       });
       if (error) throw error;
-      const payload = data as { url: string; filename: string; expires_at: string; expires_in: number };
-      if (!payload?.url) throw new Error("No signed URL returned");
+      const payload = data as { object_path: string; filename: string; expires_at: string; expires_in: number };
+      if (!payload?.object_path) throw new Error("No download returned");
       setCloudResult({
-        url: payload.url,
+        url: `${window.location.origin}/gps-download?object=${encodeURIComponent(payload.object_path)}`,
         filename: payload.filename,
         expires_at: payload.expires_at,
         expires_in: payload.expires_in,
         record_count: filtered.length,
       });
-      toast({ title: "Uploaded to cloud", description: `Signed link valid for ${formatTtl(payload.expires_in)}.` });
+      toast({ title: "Uploaded to cloud", description: `Sign-in required · expires in ${formatTtl(payload.expires_in)}.` });
     } catch (e: any) {
       toast({ title: "Cloud export failed", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
@@ -2026,7 +2026,7 @@ export default function GpsAddresses() {
                   </SelectContent>
                 </Select>
                 <p className="text-[11px] text-muted-foreground">
-                  After uploading, a time-limited download link will be generated for command download.
+                  Sign-in and current command permission required.
                 </p>
               </div>
             )}
@@ -2052,7 +2052,7 @@ export default function GpsAddresses() {
                 </div>
                 <div className="flex gap-2 pt-1">
                   <Button size="sm" asChild className="flex-1">
-                    <a href={cloudResult.url} target="_blank" rel="noopener noreferrer" download={cloudResult.filename}>
+                    <a href={cloudResult.url} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
                       Download
                     </a>
@@ -2070,7 +2070,7 @@ export default function GpsAddresses() {
                   {cloudBusy ? (
                     <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Uploading…</>
                   ) : (
-                    <><Cloud className="h-4 w-4 mr-1.5" /> Upload &amp; sign link</>
+                    <><Cloud className="h-4 w-4 mr-1.5" /> Create secure link</>
                   )}
                 </Button>
               ) : (

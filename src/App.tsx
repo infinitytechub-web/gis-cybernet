@@ -140,6 +140,7 @@ const RecycleBin = lazy(() => import("./pages/RecycleBin"));
 const DeletedRecords = lazy(() => import("./pages/DeletedRecords"));
 const RetentionPolicy = lazy(() => import("./pages/RetentionPolicy"));
 const GpsAddresses = lazy(() => import("./pages/GpsAddresses"));
+const GpsDownload = lazy(() => import("./pages/GpsDownload"));
 const Interlink = lazy(() => import("./pages/Interlink"));
 const CommandsAdmin = lazy(() => import("./pages/CommandsAdmin"));
 const CommandWorkspace = lazy(() => import("./pages/CommandWorkspace"));
@@ -351,6 +352,7 @@ function App() {
           <Route path="/armory-weapons/heads" element={<ProtectedRoute module="armory-weapons"><Layout><ArmoryHeadsPortal /></Layout></ProtectedRoute>} />
           <Route path="/armory-weapons/approvals" element={<ProtectedRoute module="armory-weapons"><Layout><ArmoryApprovals /></Layout></ProtectedRoute>} />
          <Route path="/command-vault/gps" element={<ProtectedRoute module="command-vault"><Layout><GpsAddresses /></Layout></ProtectedRoute>} />
+         <Route path="/gps-download" element={<ProtectedRoute module="command-vault"><Layout><GpsDownload /></Layout></ProtectedRoute>} />
          {/* GPS Hub aliases — keep deep-links to the canonical command-vault path. */}
          <Route path="/gps-addresses" element={<Navigate to="/command-vault/gps" replace />} />
          <Route path="/gps-hub" element={<Navigate to="/command-vault/gps" replace />} />

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { PasswordStrength } from "@/components/ui/password-strength";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,11 @@ export default function Login() {
   const [captchaActive, setCaptchaActive] = useState(false);
   const { signIn, signOut, user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const requestedDownload: unknown = location.state?.gpsDownload;
+  // Only this local download destination can override the normal landing page.
+  const gpsReturn = typeof requestedDownload === "string" && requestedDownload.startsWith("/gps-download?object=")
+    ? requestedDownload : null;
   const { toast } = useToast();
 
   // Idle-time prefetch of the post-login Dashboard chunk so navigation after
@@ -75,9 +80,9 @@ export default function Login() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate("/", { replace: true });
+      navigate(gpsReturn ?? "/", { replace: true });
     }
-  }, [loading, user, navigate]);
+  }, [loading, user, navigate, gpsReturn]);
 
   const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,7 +215,7 @@ export default function Login() {
           // Every signed-in officer lands on the Regional Commands screen;
           // the server decides which command cards they may see.
           void roleRows; void roleErr;
-          navigate("/regional-commands", { replace: true });
+          navigate(gpsReturn ?? "/regional-commands", { replace: true });
         }
       } catch (signInErr) {
         // Record security evidence without disabling the account.
@@ -230,7 +235,7 @@ export default function Login() {
     } finally {
       setIsLoading(false);
     }
-  }, [staffId, password, signIn, navigate, toast]);
+  }, [staffId, password, signIn, navigate, toast, gpsReturn]);
 
   const handleVerifyOtp = useCallback(async () => {
     if (!mfaFactorId || otp.length !== 6) return;
@@ -264,7 +269,7 @@ export default function Login() {
         .eq("user_id", verifiedUser?.id ?? "")
         .eq("role", "admin")
         .limit(1);
-      navigate((adminRoles?.length ?? 0) > 0 ? "/dashboard" : "/portal", { replace: true });
+      navigate(gpsReturn ?? ((adminRoles?.length ?? 0) > 0 ? "/dashboard" : "/portal"), { replace: true });
     } catch (e: any) {
       const reason = e?.message || "Invalid code";
       const [fp, ip] = await Promise.all([fpPromise, ipPromise]);
@@ -282,7 +287,7 @@ export default function Login() {
     } finally {
       setIsLoading(false);
     }
-  }, [mfaFactorId, otp, staffId, navigate, toast]);
+  }, [mfaFactorId, otp, staffId, navigate, toast, gpsReturn]);
 
   const handleCancelMfa = useCallback(async () => {
     try { await signOut(); } catch { /* ignore */ }
@@ -354,7 +359,7 @@ export default function Login() {
           .eq("user_id", freshUser?.id ?? "")
           .eq("role", "admin")
           .limit(1);
-        navigate((adminRoles?.length ?? 0) > 0 ? "/dashboard" : "/portal", { replace: true });
+        navigate(gpsReturn ?? ((adminRoles?.length ?? 0) > 0 ? "/dashboard" : "/portal"), { replace: true });
       }
     } catch (e: any) {
       toast({
@@ -365,7 +370,7 @@ export default function Login() {
     } finally {
       setBioLoading(false);
     }
-  }, [staffId, navigate, toast]);
+  }, [staffId, navigate, toast, gpsReturn]);
 
 
   const renderLoginForm = (idLabel: string, idPlaceholder: string, buttonClass?: string, buttonText?: string, mode: "staff" | "admin" = "staff") => {

@@ -30,7 +30,7 @@ export function ProtectedRoute({ children, requiredRole, module }: ProtectedRout
     );
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" replace state={location.pathname === "/gps-download" ? { gpsDownload: location.pathname + location.search } : undefined} />;
   if (requiredRole === "admin" && role !== "admin") return <Navigate to="/" replace />;
 
   // Force password change on first login before any other protected route.
